@@ -1,0 +1,29 @@
+{
+  "name": "karmacustom",
+  "version": "1.0.0",
+  "description": "Customising karma requirejs example",
+  "main": "karma.conf.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "steve",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/kjbekkelund/karma-requirejs/issues"
+  },
+  "homepage": "https://github.com/kjbekkelund/karma-requirejs#readme",
+  "devDependencies": {
+    "browser-sync": "^2.17.6",
+    "gulp": "^3.9.1",
+    "jasmine": "^2.5.2",
+    "karma": "^1.3.0",
+    "karma-chrome-launcher": "^2.0.0",
+    "karma-htmlfile-reporter": "^0.3.4",
+    "karma-jasmine": "^1.0.2",
+    "karma-requirejs": "^1.1.0",
+    "requirejs": "^2.3.2"
+  }
+}
