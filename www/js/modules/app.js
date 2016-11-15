@@ -1,6 +1,28 @@
-define(['jquery','htmlhint','ace/ace','csslint','jshint'],function($, HTMLHint, ace, CSSLint, JSHINT) {
+define(['jquery','htmlhint','csslint','jshint'],function($, HTMLHint, CSSLint, JSHINT) {
 
+    // removed ace, because it isn't working properly when typing in text
+    var ace = {
+        edit:function(){
+            return {
+                setShowPrintMargin:function(){},
+                setTheme:function(){},
+                getSession:function(){
+                    return {
+                        setMode:function(){},
+                        setAnnotations:function(){}
+                    }
+                },
+                on:function(){},
+                commands:{
+                    addCommand:function(){}
+                },
+                getValue:function(){}
+            }
+        }
+        
+    }
 
+    
 
     // remove jquery cookie to set
     $.cookie = function(){};
@@ -80,14 +102,24 @@ define(['jquery','htmlhint','ace/ace','csslint','jshint'],function($, HTMLHint, 
             saveSettings();
         });
         var upTimer;
-        editor = ace.edit("editor")
-        editor.setShowPrintMargin(false);
-        editor.setTheme("ace/theme/"+settings.editorTheme);
-        editor.getSession().setMode("ace/mode/html");
+
+        var editor = $('#editor');
+
         editor.on('change', function(e){
             clearTimeout(upTimer);
             upTimer = setTimeout(updateHTMLHint, 500);
         });
+        return ;
+        
+
+
+        editor = ace.edit("editor")
+        editor.setShowPrintMargin(false);
+        editor.setTheme("ace/theme/"+settings.editorTheme);
+        editor.getSession().setMode("ace/mode/html");
+
+
+
         editor.commands.addCommand({
             name: 'left',
             bindKey: {win: 'Ctrl-Left',  mac: 'Command-Left'},
@@ -123,7 +155,10 @@ define(['jquery','htmlhint','ace/ace','csslint','jshint'],function($, HTMLHint, 
         if(ruleSets['jshint'] === true){
             ruleSets['jshint'] = ruleJSHint;
         }
-        var code = editor.getValue();
+
+        //var code = editor.getValue();
+        var code = document.getElementById('editor').value;
+
         var messages = HTMLHint.verify(code, ruleSets);
         var errors = [], message;
         for(var i=0, l=messages.length;i<l;i++){
@@ -137,7 +172,7 @@ define(['jquery','htmlhint','ace/ace','csslint','jshint'],function($, HTMLHint, 
             });
         }
         arrHints = errors;
-        editor.getSession().setAnnotations(errors);
+        //editor.getSession().setAnnotations(errors);
         var errorCount = errors.length;
         jHintState.html('Find Hints: <strong>'+errorCount+'</strong>');
         if(errorCount>0){

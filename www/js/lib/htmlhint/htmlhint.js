@@ -32,6 +32,7 @@ var HTMLHint = (function (undefined) {
 
     HTMLHint.verify = function(html, ruleset){
 
+
         if(ruleset === undefined || Object.keys(ruleset).length ===0){
             ruleset = HTMLHint.defaultRuleset;
         }
@@ -654,27 +655,145 @@ HTMLHint.addRule({
     }
 });
 
+// start my code here
+
+var encodeSelector = function(str){
+    return str.replace(/([^\w\d\s<>])/gi,'\\' + '$1');
+}
+
+var replaceComments = function(style){
+    style = style.replace(/\*\//g,'¬');   
+    style = style.replace(/\/\*[^\¬]*\¬/g,'');
+    return style;
+}
+
+var getLine = function(styles, intPos){
+    var arrMatch = styles.substring(0, intPos).match(/\n/g);
+    return (arrMatch && arrMatch.length)?arrMatch.length - 1:0;
+}
+
+var filterCombinedClassesToSingleLine = function(obj, strSelector, strMatch, styles, intLine, regMatchSameClass){
+    // replace all other commas..
+    var strReplaceComments = replaceComments(strMatch);
+    var strCssProps = strMatch.replace(/^[^\{]*/,'');
+    var arrMatchSameClass;
+
+    while(arrMatchSameClass = regMatchSameClass.exec(strReplaceComments)){
+        var strEach = arrMatchSameClass[2].replace(/^\s*/,'');
+        var strFiltered = strEach + strCssProps;
+        obj[strSelector].push({
+            line:intLine,
+            block:strFiltered,                    
+            all:strMatch
+        });
+    }
+    return obj;
+}
+
+// get all matching first.
+var getStyleBlocksPerClass = function(styles, strSelectors){
+
+    var obj = {};
+    var arrSelectors = strSelectors.split('.');
+
+    for(var i = 1, intLen = arrSelectors.length; i < intLen; ++i){
+
+        var strSelector = arrSelectors[i];
+        var encodedSelector = '\\.' + strSelector;
+
+        obj[strSelector] = [];
+
+        var regMatchWholeBlock = RegExp('(^|\\n)[^\\{\\}]*' + encodedSelector + '\\s*[\\,\\{\\.\\#\\:\\[][^\\}]*\\}','g');
+        var regMatchSameClass = RegExp('(^|\\,)([^\\{\\,]*' + encodedSelector + '(\\[[^\\]]*\\]|\\:[^\\:][^\\,\\{]*|[\\#\\.][^\\,\\{]*)*)\\s*[\\,\\{]','g');
+
+
+        var intLine = getLine(styles, regMatchWholeBlock.lastIndex);
+
+        var arrMatch = null;
+
+        while(arrMatch = regMatchWholeBlock.exec(styles)){
+            var strMatch = arrMatch[0];
+            obj = filterCombinedClassesToSingleLine(obj, strSelector, strMatch, styles, intLine, regMatchSameClass);
+
+        }
+    }
+    return obj;
+}
+
+
+
+var getEndSelector = function(strBlock){
+    // get end
+    var arrBlock = strBlock.split(' ');
+    for(k = arrBlock.length -1; k > -1; --k){
+        var strEnd = arrBlock[k];
+        if(strEnd.search(/^[\.\#\[]/)!==-1){
+            strEnd = strEnd.replace(/\{[\w\W]*$/,'');
+            return strEnd;
+        }
+    }
+    return null;
+}
+
+var filterStylesOnHtml = function(html, objStyles){
+
+    for(strSelector in objStyles){
+        var arrStyles = objStyles[strSelector];
+
+console.log('strSelector = ', strSelector);
+
+        for(var i = 0, intLen = arrStyles.length; i < intLen; ++i){
+            var strBlock = arrStyles[i].block;
+
+
+console.log('####################################################################');
+    console.log('strBlock = ',strBlock);
+            var strEndSelector = getEndSelector(strBlock);
+console.log('strEndSelector = "' + strEndSelector + '"');
+
+        }
+    }
+
+
+    return objStyles;
+}
+
 
 HTMLHint.addRule({
     id: "steves-rule-capture-all",
     description: "Test to capture the whole html on any change",
     init: function stevesMethod(parser, reporter) {
-        var selft = this;
+        var self = this;
 
-console.log('stevesRule?');
+        var strSelectors = '.theClass1.theClass2';
+        var styles = $('#styles').val();
+        var objStyles = getStyleBlocksPerClass(styles, strSelectors);
+
+//console.log('objStyles = ');
+//console.dir(objStyles);
+
 
         var allEvent = function(event) {
-
-console.log('event.html = ',event.html);        
-
             if(event.type == 'start'){
-                
-console.log('hello steve');   
 
-                reporter.error("My test", event.line, event.col, self, event.raw);
+// todo
+// if an element has more than one class.
+// search theClass in bundle.css and build an array of all items found, irrespective of parent or sibling classes.
+// filter down the class by each preclass/id
+    // sibling
+    // parent
+
+        // repeat onto the next preclass/id until no more levels exist.
+
+// once you have an array of all remaining classes - compare the properties, and if any are shared, provide error message.
+
+               var filteredStyles = filterStylesOnHtml(event.html, objStyles);
+
+//console.log('filteredStyles = ', filteredStyles);
+
+                reporter.error("steves test", event.line, event.col, self, event.raw);
             }
             parser.removeListener("start", allEvent);
-
         };
         parser.addListener("start", allEvent);
     }

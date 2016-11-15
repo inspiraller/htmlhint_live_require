@@ -9,6 +9,11 @@ gulp.task('server', function() {
 					index: "index.html"
 			}
 	});
+
+  gulp.watch([
+    './www/js/lib/htmlhint/*.js',
+    './www/js/modules/*.js'
+    ]).on('change', browserSync.reload);
 });
 
 
