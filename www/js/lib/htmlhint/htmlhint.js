@@ -758,6 +758,182 @@ console.log('strEndSelector = "' + strEndSelector + '"');
     return objStyles;
 }
 
+/*
+var getParentElem = function(strUpTo){
+    var strParentElem = strUpTo;
+
+    var regSiblingSelfClosing = /<(\w[^\s<>]*)([^<>]*)\/>[^<>]*$/gi;
+    var regSiblingTagPair = /<\/(\w[^\s<>]*)([^<>]*)>[^<>]*$/gi;
+
+    var arrSelfClosingSiblingBefore = strUpTo.match(regSiblingSelfClosing);
+    var arrTagPairSiblingBefore = strUpTo.match(regSiblingTagPair);
+
+    var isSiblingBefore = arrSelfClosingSiblingBefore || arrTagPairSiblingBefore;
+
+    if(isSiblingBefore){
+        console.log('isSiblingBefore = ', isSiblingBefore);
+        
+        //var arrSibling = (arrTagPairSiblingBefore)?getSiblingStartTag(strUpTo, arrTagPairSiblingBefore):arrSelfClosingSiblingBefore;
+
+
+    }
+
+    
+    return strParentElem;
+}
+*/
+
+var trace = function(x){
+    console.log(x);
+}
+var wrapTagPointers = function(str){
+
+//If contains html
+    if(str.search(/[<>]/)!==-1){
+
+//str = str.substring(0,100) + '<BIB>' + str.substr(100);
+
+        // remove comments
+        str = str.replace(/-->/g,'¬');
+        str = str.replace(/<\!--[^¬]*¬/g,'');
+
+        // fix self closing
+        str = str.replace(/<(img|hr|br|meta|area|base|col|command|embed|input|keygen|link|param|source|track|wbr)([^>]*)\/?>/g,'<$1' + '$2/>');
+
+        var strMarkerStart = '\u0398';
+        var strMarkerEnd = '\u20AA';  
+        var strMarkerHandle = '\u20A9';
+
+        //loop all tags and wrap with markers
+        //set markers
+        //convert:     <p></p>
+        //to:        �<p></p>`
+        str = str.replace(/(<\w+([\s\:][^>]*[^\/])?>)/g, strMarkerStart + "$1");
+        str = str.replace(/(<\/\w+([\s\:][^>]*)?>)/g,"$1"+strMarkerEnd);
+
+
+        //Loop through each wrapped tag and add a handle marker around it. Example:
+        //search: �(<(tag) >...</(tag)>)`
+        //replace with: ¬1 <(tag) >...</(tag)>¬1
+        //replace with: ¬2 <(tag) >...</(tag)>¬2
+        //replace with: ¬3 <(tag) >...</(tag)>¬3
+        //etc...
+
+        var intC = 0,
+        regI = RegExp(strMarkerStart+"(<(\\w[^\\s]*)[^\\/][^"+strMarkerStart+strMarkerEnd+"]*<\\/\\2\\s*>)"+strMarkerEnd,'g');
+        var fnReplace = function(){
+            var arg = arguments;
+            var strA = ((strMarkerHandle + intC + ' ') +  arg[1] + (strMarkerHandle + intC + ' '));
+            ++intC;
+            return strA;
+        }
+        //wrap uncollapsed tags
+        while(str.search(regI)!== -1) {str = str.replace(regI,fnReplace);}
+
+        //wrap collapsed/self closing tags
+        str = str.replace(/(\<[^>]*\/>)/g,fnReplace);
+
+
+        // test bad html
+        var intStartBad = str.lastIndexOf(strMarkerStart);
+        var intEndBad = str.search(strMarkerEnd);
+        if(intStartBad!==-1){
+            var strStart = str.substr(intStartBad);
+            var strStartTag = strStart.substring(0, strStart.indexOf('>'));
+            var intStartLine = str.substring(0, intStartBad).split('\n').length - 1;
+
+            var strBad = str.substring(0, intEndBad);
+            var strBadTag = strBad.substr(strBad.lastIndexOf('<'));
+            var intBadLine = str.substring(0, intEndBad).split('\n').length - 1;
+
+            strStartTag = strStartTag.replace(strMarkerStart,'');
+            strBadTag = strBadTag.replace(strMarkerEnd,'');
+
+            trace('Your html is not well formed. line:' + intStartLine + ', tag:' + strStartTag + ' doesnt match line: ' + intBadLine + ', tag: ' + strBadTag);
+
+            return null;
+        }
+
+    }else{
+        //not valid, firebug would show errors.
+        trace('You have not supplied any html!');
+    }
+    return str;
+}
+
+var getHtmlAsJson = function(html){
+    var wrapped = wrapTagPointers(html);
+console.log('wrapped = ', wrapped);    
+
+}
+
+//var getHtmlAsJson = function(html){
+    /*
+    var obj = {};
+
+    // remove comments
+    html = html.replace(/-->/g,'¬');
+    html = html.replace(/<\!--[^¬]*¬/g,'');
+
+    // fix self closing
+    html = html.replace(/<(img|hr|br|meta)([^>]*)\/?>/g,'<$1' + '$2/>');
+
+    var intCount = 0;
+    var strMarkerStart = '\u0398';
+    var strMarkerEnd = '\u20AA';   
+
+
+    // self closing
+    html = html.replace(/(<\w[^\s<>]*[^<>]*\/>)/gi, function($0, $1){
+        var str = strMarkerStart + intCount + '$1' + strMarkerEnd + intCount;   
+        intCount++
+        return str;
+    });
+
+    // tag pair
+    html = html.replace(RegExp('(<\\w[^\\s<>]*[^<>]*>[^\\' + strMarkerEnd + '])','gi'), strMarkerStart + '$1');
+    html = html.replace(/(<\/\w[^\s<>]*[^<>]*>)/gi,'$1' + strMarkerEnd);
+
+    var arrMatch;
+    var reg = RegExp('<(\\w[^\\s<>]*)[^\\' + strMarkerEnd + '<>]*(\\/>|>[^<]*<\\/\\1[^\\'+ strMarkerEnd + ']*)\\'+ strMarkerEnd,'g');
+
+    while(arrMatch = reg.exec(html)){
+console.log(arrMatch);        
+    }
+
+console.log(html);    
+*/
+
+
+/*
+    var regTag = /<(\w[^\s<>]*)([^<>]*)>/gi;
+
+
+    var arrMatch;
+    while(arrMatch = regTag.exec(html)){
+console.log('########################################');   
+//console.log('tag = <' +  arrMatch[1]);
+
+        console.log(arrMatch);
+
+
+        var intIndex = arrMatch.index;
+
+        var strDown = html.substr(intIndex);
+console.log(strDown);        
+
+
+        
+        var strUpTo = html.substring(0, arrMatch.index);
+        var strParentElem = getParentElem(strUpTo);
+        
+
+        console.log(strParentElem);
+        
+    }
+    */
+
+//}
 
 HTMLHint.addRule({
     id: "steves-rule-capture-all",
@@ -787,7 +963,8 @@ HTMLHint.addRule({
 
 // once you have an array of all remaining classes - compare the properties, and if any are shared, provide error message.
 
-               var filteredStyles = filterStylesOnHtml(event.html, objStyles);
+                var jsonHtml = getHtmlAsJson(event.html);
+               //var filteredStyles = filterStylesOnHtml(event.html, objStyles);
 
 //console.log('filteredStyles = ', filteredStyles);
 
