@@ -861,9 +861,167 @@ var wrapTagPointers = function(str){
     return str;
 }
 
+
+var getParentAndSiblingsFromWrappedHtml = function(strClass, strWrapped){
+  // P) Get parent
+  // P.1) it's easier to get the element first, 
+  // P.2) and then remove all following siblings. 
+  // P.3) Then we get the first end marker, which will have an identifier for the parent.
+  // P.4) Then we just do a search for the identifier on strWrapped to get the parent.
+  
+  //1) get the element
+  var strClassNoDot = strClass.replace(/^\./,'');
+
+  var strMarkerHandle = '\u20A9';
+ 
+  var regMatchElem = RegExp(strMarkerHandle + '(\\d+) <\\w[^>]*class\\=\\"?[^\\"]*[\\s\\"]' + strClassNoDot + '[\\"\\s][\\w\\W]*\\' + strMarkerHandle + '\\1 ');
+  var arrMatch = strWrapped.match(regMatchElem);
+  if(arrMatch && arrMatch.length){
+        
+    // 2) remove all following siblings
+    var intIndexEnd = arrMatch.index + arrMatch[0].length;                                 
+    var regRemovePairs = RegExp('(\\' + strMarkerHandle + '(\\d+) <\\w[^\\s]*[^>]*>)[\\w\\W]*\\' + strMarkerHandle + '\\2 ','g');
+    var strEnd = strWrapped.substr(intIndexEnd);        
+    while(regRemovePairs.test(strEnd)){
+      strEnd = strEnd.replace(regRemovePairs,'');
+    } 
+    
+    // 3) Then get the first end marker, which will have an identifier for the parent
+    var regEndMarker = RegExp('\\' + strMarkerHandle + '(\\d+) ');
+    var arrMatchParentNumber = strEnd.match(regEndMarker);
+    var strParentMarkerNumber = arrMatchParentNumber[1];            
+    
+    // 4) Then we do a search for the identifier on the strWrapped to get the parent.
+    var regParent = RegExp('\\' + strMarkerHandle + strParentMarkerNumber + ' \\s*<\\w[^\\s]*[^<>]*(class\\=\\"([^\\"]*))?(id\\=\\"([^\\"]*))?[^>]*>');
+    var arrMatchParentOuterHtml = strWrapped.match(regParent);    
+    var strParentOuterHtml = arrMatchParentOuterHtml[0];            
+
+    
+    // S) GET SIBLING
+    // S.1) extract strWrapped between parent and element
+    var strUptoElem = strWrapped.substring(0, strWrapped.search(regMatchElem));
+    var strFromParentToElem = strUptoElem.substr(strWrapped.search(regParent) +  arrMatchParentOuterHtml[0].length);
+    
+    // S.2) Iterate over every first match
+    var arrSiblings = [];    
+    
+    strFromParentToElem = strFromParentToElem.replace(regRemovePairs,function($0, $1){     
+      arrSiblings.push($1);
+      return '';
+    });
+    
+    
+    return {
+      parent:strParentOuterHtml,
+      arrSiblings:arrSiblings
+    }
+
+    
+  }else{
+    trace('Cannot find the class inside the source html');
+  }            
+
+}
+
+//getParentAndSiblingsFromWrappedHtml('.theClass1',strWrapped);
+
+var createBodyJson = function(html){
+    /*
+    example:
+var objBody = {
+  classes:'bodyclass',
+  children:[
+    {
+      h1:{
+
+      }
+    },
+    {
+      p1:{
+        classes:'p1class',
+        children:[
+          {
+            span:{
+
+            }
+          },
+          {
+            span:{
+
+            }
+          }
+        ]
+      }
+    },
+    {
+      p2:{
+        classes:'p2class',
+        children:[
+          {
+            span:{
+
+            }
+          },
+          {
+            span:{
+
+            }
+          }
+        ]
+      }
+    }          
+  ]          
+}    
+    */
+
+    var obj = {};
+
+
+    return obj;
+}
+
+
+function addParentsAndSiblingsToJson(obj, objParent, objSiblings){
+    // note: These are not siblings, but preSiblings. Siblings that appear before the element.
+  if(objParent){
+    obj.parent = objParent;
+  }   
+  if(objSiblings){
+    obj.siblings = objSiblings;
+  }
+  var children = obj.children;        
+  if(children && children.length){
+    
+    for(var i = 0, intLen = children.length; i < intLen; ++i){        
+      var child = children[i];                          
+      for(tag in child){          
+        child[tag] = addParentsAndSiblings(child[tag], obj, (i > 0)?children.slice(0,i):null);
+
+      }  
+    }
+  }    
+  
+  
+  return obj;
+}
+
+
+//objBodyJson = addParentsAndSiblings(objBodyJson, null, null);
+//console.log('objBodyJson = ');
+//console.dir(objBodyJson);
+
+
+
 var getHtmlAsJson = function(html){
-    var wrapped = wrapTagPointers(html);
-console.log('wrapped = ', wrapped);    
+    var strWrapped = wrapTagPointers(html);
+    var objBodyJson = createBodyJson(strWrapped);
+
+    // iterate from the top of the nodes to build a json object of the html
+    // example
+
+
+console.log('strWrapped = ',strWrapped);  
+console.log('objBodyJson = ', objBodyJson);  
 
 }
 
