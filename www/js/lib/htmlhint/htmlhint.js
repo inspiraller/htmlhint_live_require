@@ -655,6 +655,8 @@ HTMLHint.addRule({
     }
 });
 
+// ######################################################################################
+// Get STYLES 
 // start my code here
 
 var encodeSelector = function(str){
@@ -690,7 +692,6 @@ var filterCombinedClassesToSingleLine = function(obj, strSelector, strMatch, sty
     return obj;
 }
 
-// get all matching first.
 var getStyleBlocksPerClass = function(styles, strSelectors){
 
     var obj = {};
@@ -719,7 +720,6 @@ var getStyleBlocksPerClass = function(styles, strSelectors){
     }
     return obj;
 }
-
 
 
 var getEndSelector = function(strBlock){
@@ -758,30 +758,7 @@ console.log('strEndSelector = "' + strEndSelector + '"');
     return objStyles;
 }
 
-/*
-var getParentElem = function(strUpTo){
-    var strParentElem = strUpTo;
 
-    var regSiblingSelfClosing = /<(\w[^\s<>]*)([^<>]*)\/>[^<>]*$/gi;
-    var regSiblingTagPair = /<\/(\w[^\s<>]*)([^<>]*)>[^<>]*$/gi;
-
-    var arrSelfClosingSiblingBefore = strUpTo.match(regSiblingSelfClosing);
-    var arrTagPairSiblingBefore = strUpTo.match(regSiblingTagPair);
-
-    var isSiblingBefore = arrSelfClosingSiblingBefore || arrTagPairSiblingBefore;
-
-    if(isSiblingBefore){
-        console.log('isSiblingBefore = ', isSiblingBefore);
-        
-        //var arrSibling = (arrTagPairSiblingBefore)?getSiblingStartTag(strUpTo, arrTagPairSiblingBefore):arrSelfClosingSiblingBefore;
-
-
-    }
-
-    
-    return strParentElem;
-}
-*/
 
 var trace = function(x){
     console.log(x);
@@ -861,74 +838,70 @@ var wrapTagPointers = function(str){
     return str;
 }
 
+var createHtmlAsJson = function(html, objParent){
+    var arrChildren = [];
 
-var getParentAndSiblingsFromWrappedHtml = function(strClass, strWrapped){
-  // P) Get parent
-  // P.1) it's easier to get the element first, 
-  // P.2) and then remove all following siblings. 
-  // P.3) Then we get the first end marker, which will have an identifier for the parent.
-  // P.4) Then we just do a search for the identifier on strWrapped to get the parent.
+    var strMarkerHandle = '\u20A9';    
   
-  //1) get the element
-  var strClassNoDot = strClass.replace(/^\./,'');
+    // Get children of each top element.
+    var regPairs = new RegExp('(\\' + strMarkerHandle + '(\\d+) <(\\w[^\\s<>]*)([^<>]*)>)([\\w\\W]*)\\' + strMarkerHandle + '\\2 ','g');        
 
-  var strMarkerHandle = '\u20A9';
- 
-  var regMatchElem = RegExp(strMarkerHandle + '(\\d+) <\\w[^>]*class\\=\\"?[^\\"]*[\\s\\"]' + strClassNoDot + '[\\"\\s][\\w\\W]*\\' + strMarkerHandle + '\\1 ');
-  var arrMatch = strWrapped.match(regMatchElem);
-  if(arrMatch && arrMatch.length){
+    if(html.search(regPairs) ===-1){      
+      arrChildren.push({
+        elem:'textNode',
+        content:html
+      });
+    }else{
+      
+      // on each child of top element, capture the elem, content, attributes.
+      // if the child has children then recurse again.
+      
+      var arrMatch = null;
+      var obj;
+      while(arrMatch = regPairs.exec(html)){          
         
-    // 2) remove all following siblings
-    var intIndexEnd = arrMatch.index + arrMatch[0].length;                                 
-    var regRemovePairs = RegExp('(\\' + strMarkerHandle + '(\\d+) <\\w[^\\s]*[^>]*>)[\\w\\W]*\\' + strMarkerHandle + '\\2 ','g');
-    var strEnd = strWrapped.substr(intIndexEnd);        
-    while(regRemovePairs.test(strEnd)){
-      strEnd = strEnd.replace(regRemovePairs,'');
-    } 
-    
-    // 3) Then get the first end marker, which will have an identifier for the parent
-    var regEndMarker = RegExp('\\' + strMarkerHandle + '(\\d+) ');
-    var arrMatchParentNumber = strEnd.match(regEndMarker);
-    var strParentMarkerNumber = arrMatchParentNumber[1];            
-    
-    // 4) Then we do a search for the identifier on the strWrapped to get the parent.
-    var regParent = RegExp('\\' + strMarkerHandle + strParentMarkerNumber + ' \\s*<\\w[^\\s]*[^<>]*(class\\=\\"([^\\"]*))?(id\\=\\"([^\\"]*))?[^>]*>');
-    var arrMatchParentOuterHtml = strWrapped.match(regParent);    
-    var strParentOuterHtml = arrMatchParentOuterHtml[0];            
+        obj = {};
+        
+        var elem = arrMatch[3];
+        var isSelfClosing = elem.lastIndexOf('/')!==-1 || false;
+        var content = (!isSelfClosing)? arrMatch[5] :null;
+        var attr = arrMatch[4] || '';
 
-    
-    // S) GET SIBLING
-    // S.1) extract strWrapped between parent and element
-    var strUptoElem = strWrapped.substring(0, strWrapped.search(regMatchElem));
-    var strFromParentToElem = strUptoElem.substr(strWrapped.search(regParent) +  arrMatchParentOuterHtml[0].length);
-    
-    // S.2) Iterate over every first match
-    var arrSiblings = [];    
-    
-    strFromParentToElem = strFromParentToElem.replace(regRemovePairs,function($0, $1){     
-      arrSiblings.push($1);
-      return '';
-    });
-    
-    
-    return {
-      parent:strParentOuterHtml,
-      arrSiblings:arrSiblings
-    }
+        obj.elem = elem;
+        //obj.isSelfClosing = isSelfClosing;           
+        
+        if(objParent.elem){
+          obj.parent = objParent;
+        }      
+        
+        if(attr){
+                    
+          var arrMatchClasses = attr.match(/class\=\"([^\"]*)\"/);
+          if(arrMatchClasses && arrMatchClasses.length){
+            obj.classes = arrMatchClasses[1];
+          }
+          
+          attr = attr.replace(/\"/g,'\\"');
+          obj.attr = attr;
+        }
+        if(content){
+          content = content.substring(0, content.lastIndexOf('</'));
+          obj.children = createHtmlAsJson(content, obj);
+          
+        }      
+        arrChildren.push(obj);
+        if(arrChildren.length > 1){
+          obj.preSiblings = arrChildren.slice(0, arrChildren.length - 1); 
+        }   
+    }  
+  }
+  return arrChildren;  
 
-    
-  }else{
-    trace('Cannot find the class inside the source html');
-  }            
 
-}
 
-//getParentAndSiblingsFromWrappedHtml('.theClass1',strWrapped);
-
-var createBodyJson = function(html){
     /*
     example:
-var objBody = {
+var json = [{
   classes:'bodyclass',
   children:[
     {
@@ -971,127 +944,24 @@ var objBody = {
       }
     }          
   ]          
-}    
+}] 
     */
-
-    var obj = {};
-
-
-    return obj;
 }
-
-
-function addParentsAndSiblingsToJson(obj, objParent, objSiblings){
-    // note: These are not siblings, but preSiblings. Siblings that appear before the element.
-  if(objParent){
-    obj.parent = objParent;
-  }   
-  if(objSiblings){
-    obj.siblings = objSiblings;
-  }
-  var children = obj.children;        
-  if(children && children.length){
-    
-    for(var i = 0, intLen = children.length; i < intLen; ++i){        
-      var child = children[i];                          
-      for(tag in child){          
-        child[tag] = addParentsAndSiblings(child[tag], obj, (i > 0)?children.slice(0,i):null);
-
-      }  
-    }
-  }    
-  
-  
-  return obj;
-}
-
-
-//objBodyJson = addParentsAndSiblings(objBodyJson, null, null);
-//console.log('objBodyJson = ');
-//console.dir(objBodyJson);
-
 
 
 var getHtmlAsJson = function(html){
     var strWrapped = wrapTagPointers(html);
-    var objBodyJson = createBodyJson(strWrapped);
+    var arrHtmlJson = createHtmlAsJson(strWrapped, {});
 
     // iterate from the top of the nodes to build a json object of the html
     // example
 
-
 console.log('strWrapped = ',strWrapped);  
-console.log('objBodyJson = ', objBodyJson);  
-
+console.log('arrHtmlJson = ');  
+console.dir(arrHtmlJson);
 }
 
-//var getHtmlAsJson = function(html){
-    /*
-    var obj = {};
 
-    // remove comments
-    html = html.replace(/-->/g,'¬');
-    html = html.replace(/<\!--[^¬]*¬/g,'');
-
-    // fix self closing
-    html = html.replace(/<(img|hr|br|meta)([^>]*)\/?>/g,'<$1' + '$2/>');
-
-    var intCount = 0;
-    var strMarkerStart = '\u0398';
-    var strMarkerEnd = '\u20AA';   
-
-
-    // self closing
-    html = html.replace(/(<\w[^\s<>]*[^<>]*\/>)/gi, function($0, $1){
-        var str = strMarkerStart + intCount + '$1' + strMarkerEnd + intCount;   
-        intCount++
-        return str;
-    });
-
-    // tag pair
-    html = html.replace(RegExp('(<\\w[^\\s<>]*[^<>]*>[^\\' + strMarkerEnd + '])','gi'), strMarkerStart + '$1');
-    html = html.replace(/(<\/\w[^\s<>]*[^<>]*>)/gi,'$1' + strMarkerEnd);
-
-    var arrMatch;
-    var reg = RegExp('<(\\w[^\\s<>]*)[^\\' + strMarkerEnd + '<>]*(\\/>|>[^<]*<\\/\\1[^\\'+ strMarkerEnd + ']*)\\'+ strMarkerEnd,'g');
-
-    while(arrMatch = reg.exec(html)){
-console.log(arrMatch);        
-    }
-
-console.log(html);    
-*/
-
-
-/*
-    var regTag = /<(\w[^\s<>]*)([^<>]*)>/gi;
-
-
-    var arrMatch;
-    while(arrMatch = regTag.exec(html)){
-console.log('########################################');   
-//console.log('tag = <' +  arrMatch[1]);
-
-        console.log(arrMatch);
-
-
-        var intIndex = arrMatch.index;
-
-        var strDown = html.substr(intIndex);
-console.log(strDown);        
-
-
-        
-        var strUpTo = html.substring(0, arrMatch.index);
-        var strParentElem = getParentElem(strUpTo);
-        
-
-        console.log(strParentElem);
-        
-    }
-    */
-
-//}
 
 HTMLHint.addRule({
     id: "steves-rule-capture-all",
@@ -1110,6 +980,7 @@ HTMLHint.addRule({
         var allEvent = function(event) {
             if(event.type == 'start'){
 
+
 // todo
 // if an element has more than one class.
 // search theClass in bundle.css and build an array of all items found, irrespective of parent or sibling classes.
@@ -1119,12 +990,10 @@ HTMLHint.addRule({
 
         // repeat onto the next preclass/id until no more levels exist.
 
-// once you have an array of all remaining classes - compare the properties, and if any are shared, provide error message.
+        // once you have an array of all remaining classes - compare the properties, and if any are shared, provide error message.
 
                 var jsonHtml = getHtmlAsJson(event.html);
-               //var filteredStyles = filterStylesOnHtml(event.html, objStyles);
 
-//console.log('filteredStyles = ', filteredStyles);
 
                 reporter.error("steves test", event.line, event.col, self, event.raw);
             }
