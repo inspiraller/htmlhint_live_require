@@ -835,15 +835,25 @@ var wrapTagPointers = function(str){
         //not valid, firebug would show errors.
         trace('You have not supplied any html!');
     }
+
+
     return str;
 }
 
 var createHtmlAsJson = function(html, objParent){
     var arrChildren = [];
-
+  
+    
+    // TODO:, reduce these down to one, by doing a find and replace on all attributes to ensure they are all one type, ie attr="dbl quoted value"
+    var regAttr1 = /\s([^\=<>\s\'\"]+)\=\"([^\"]*)\"/g;
+    var regAttr2 = /\s([^\=<>\s\'\"]+)\=\'([^\']*)\'/g;
+    var regAttr3 = /\s([^\=<>\s\'\"]+)\=([^\s<>\"\']*)(\s|>|$)/g;
+    
+    // TODO: supply this marker to the function, to save redeclaring it.
     var strMarkerHandle = '\u20A9';    
   
     // Get children of each top element.
+    // TODO: supply this regex to the function, to save redeclaring it.
     var regPairs = new RegExp('(\\' + strMarkerHandle + '(\\d+) <(\\w[^\\s<>]*)([^<>]*)>)([\\w\\W]*)\\' + strMarkerHandle + '\\2 ','g');        
 
     if(html.search(regPairs) ===-1){      
@@ -865,42 +875,52 @@ var createHtmlAsJson = function(html, objParent){
         var elem = arrMatch[3];
         var isSelfClosing = elem.lastIndexOf('/')!==-1 || false;
         var content = (!isSelfClosing)? arrMatch[5] :null;
-        var attr = arrMatch[4] || '';
+        var attr = arrMatch[4] || false;
 
         obj.elem = elem;
         //obj.isSelfClosing = isSelfClosing;           
-        
-        if(objParent.elem){
-          obj.parent = objParent;
-        }      
+          
         
         if(attr){
-                    
-          var arrMatchClasses = attr.match(/class\=\"([^\"]*)\"/);
-          if(arrMatchClasses && arrMatchClasses.length){
-            obj.classes = arrMatchClasses[1];
-          }
+          var arrAttr;
           
-          attr = attr.replace(/\"/g,'\\"');
-          obj.attr = attr;
+          // TODO: only have one while, for one type of attribute supplied.
+          while(arrAttr = regAttr1.exec(attr)){
+            var key = arrAttr[1];
+            var val = arrAttr[2];
+            obj[key] = val;          
+          }
+          while(arrAttr = regAttr2.exec(attr)){
+            var key = arrAttr[1];
+            var val = arrAttr[2];
+            obj[key] = val;          
+          }          
+          while(arrAttr = regAttr3.exec(attr)){
+            var key = arrAttr[1];
+            var val = arrAttr[2];
+            obj[key] = val;          
+          }
         }
+
         if(content){
           content = content.substring(0, content.lastIndexOf('</'));
           obj.children = createHtmlAsJson(content, obj);
           
-        }      
+        }  
+        if(objParent.elem){
+          obj.parent = objParent;
+        }           
         arrChildren.push(obj);
         if(arrChildren.length > 1){
           obj.preSiblings = arrChildren.slice(0, arrChildren.length - 1); 
         }   
     }  
   }
-  return arrChildren;  
+  return arrChildren;    
 
 
 
-    /*
-    example:
+    /* This method should create example:
 var json = [{
   classes:'bodyclass',
   children:[
@@ -948,17 +968,23 @@ var json = [{
     */
 }
 
+var reportMultipleClassesWithSameProps = function(arrHtmlJson){
+
+}
 
 var getHtmlAsJson = function(html){
+    // remove everything outside body
+    html = html.replace(/^[\w\W]*(<body(\s[^<>]*>|>)[\w\W]*<\/body\s*>)[\w\W]*$/gi,'$1');
     var strWrapped = wrapTagPointers(html);
+    
+console.log('html wrapped with tag pointers = ',strWrapped);
+
     var arrHtmlJson = createHtmlAsJson(strWrapped, {});
 
-    // iterate from the top of the nodes to build a json object of the html
-    // example
-
-console.log('strWrapped = ',strWrapped);  
-console.log('arrHtmlJson = ');  
+console.log('arrHtmlJson =');
 console.dir(arrHtmlJson);
+
+    return arrHtmlJson;
 }
 
 
@@ -992,7 +1018,9 @@ HTMLHint.addRule({
 
         // once you have an array of all remaining classes - compare the properties, and if any are shared, provide error message.
 
-                var jsonHtml = getHtmlAsJson(event.html);
+                var arrHtmlJson = getHtmlAsJson(event.html);
+
+                reportMultipleClassesWithSameProps(arrHtmlJson);
 
 
                 reporter.error("steves test", event.line, event.col, self, event.raw);
