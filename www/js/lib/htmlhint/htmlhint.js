@@ -663,65 +663,70 @@ var encodeSelector = function(str){
     return str.replace(/([^\w\d\s<>])/gi,'\\' + '$1');
 }
 
-var replaceComments = function(style){
-    style = style.replace(/\*\//g,'¬');   
-    style = style.replace(/\/\*[^\¬]*\¬/g,'');
-    return style;
+var styleBlocks = function(strAllStyles, strSelectors){
+    return new StyleBlocks().init(strAllStyles, strSelectors);
 }
+var StyleBlocks = function(){};
+StyleBlocks.prototype = {
+    init : function(styles, strSelectors){
+        //getStyleBlocksPerClass
 
-var getLine = function(styles, intPos){
-    var arrMatch = styles.substring(0, intPos).match(/\n/g);
-    return (arrMatch && arrMatch.length)?arrMatch.length - 1:0;
-}
+        var obj = {};
+        var arrSelectors = strSelectors.split('.');
 
-var filterCombinedClassesToSingleLine = function(obj, strSelector, strMatch, styles, intLine, regMatchSameClass){
-    // replace all other commas..
-    var strReplaceComments = replaceComments(strMatch);
-    var strCssProps = strMatch.replace(/^[^\{]*/,'');
-    var arrMatchSameClass;
+        for(var i = 1, intLen = arrSelectors.length; i < intLen; ++i){
 
-    while(arrMatchSameClass = regMatchSameClass.exec(strReplaceComments)){
-        var strEach = arrMatchSameClass[2].replace(/^\s*/,'');
-        var strFiltered = strEach + strCssProps;
-        obj[strSelector].push({
-            line:intLine,
-            block:strFiltered,                    
-            all:strMatch
-        });
-    }
-    return obj;
-}
+            var strSelector = arrSelectors[i];
+            var encodedSelector = '\\.' + strSelector;
 
-var getStyleBlocksPerClass = function(styles, strSelectors){
+            obj[strSelector] = [];
 
-    var obj = {};
-    var arrSelectors = strSelectors.split('.');
+            var regMatchWholeBlock = RegExp('(^|\\n)[^\\{\\}]*' + encodedSelector + '\\s*[\\,\\{\\.\\#\\:\\[][^\\}]*\\}','g');
+            var regMatchSameClass = RegExp('(^|\\,)([^\\{\\,]*' + encodedSelector + '(\\[[^\\]]*\\]|\\:[^\\:][^\\,\\{]*|[\\#\\.][^\\,\\{]*)*)\\s*[\\,\\{]','g');
 
-    for(var i = 1, intLen = arrSelectors.length; i < intLen; ++i){
+            var intLine = this.getLine(styles, regMatchWholeBlock.lastIndex);
 
-        var strSelector = arrSelectors[i];
-        var encodedSelector = '\\.' + strSelector;
+            var arrMatch = null;
 
-        obj[strSelector] = [];
+            while(arrMatch = regMatchWholeBlock.exec(styles)){
+                var strMatch = arrMatch[0];
+                obj = this.filterCombinedClassesToSingleLine(obj, strSelector, strMatch, styles, intLine, regMatchSameClass);
 
-        var regMatchWholeBlock = RegExp('(^|\\n)[^\\{\\}]*' + encodedSelector + '\\s*[\\,\\{\\.\\#\\:\\[][^\\}]*\\}','g');
-        var regMatchSameClass = RegExp('(^|\\,)([^\\{\\,]*' + encodedSelector + '(\\[[^\\]]*\\]|\\:[^\\:][^\\,\\{]*|[\\#\\.][^\\,\\{]*)*)\\s*[\\,\\{]','g');
-
-
-        var intLine = getLine(styles, regMatchWholeBlock.lastIndex);
-
-        var arrMatch = null;
-
-        while(arrMatch = regMatchWholeBlock.exec(styles)){
-            var strMatch = arrMatch[0];
-            obj = filterCombinedClassesToSingleLine(obj, strSelector, strMatch, styles, intLine, regMatchSameClass);
-
+            }
         }
-    }
-    return obj;
+        return obj;
+    },
+    filterCombinedClassesToSingleLine : function(obj, strSelector, strMatch, styles, intLine, regMatchSameClass){
+        // replace all other commas..
+        var strReplaceComments = this.replaceComments(strMatch);
+        var strCssProps = strMatch.replace(/^[^\{]*/,'');
+        var arrMatchSameClass;
+
+        while(arrMatchSameClass = regMatchSameClass.exec(strReplaceComments)){
+            var strEach = arrMatchSameClass[2].replace(/^\s*/,'');
+            var strFiltered = strEach + strCssProps;
+            obj[strSelector].push({
+                line:intLine,
+                block:strFiltered,                    
+                all:strMatch
+            });
+        }
+        return obj;
+    },
+    getLine : function(styles, intPos){
+        var arrMatch = styles.substring(0, intPos).match(/\n/g);
+        return (arrMatch && arrMatch.length)?arrMatch.length - 1:0;
+    },
+    replaceComments : function(style){
+        style = style.replace(/\*\//g,'¬');   
+        style = style.replace(/\/\*[^\¬]*\¬/g,'');
+        return style;
+    }    
 }
 
 
+// experimental 
+/*
 var getEndSelector = function(strBlock){
     // get end
     var arrBlock = strBlock.split(' ');
@@ -757,61 +762,116 @@ console.log('strEndSelector = "' + strEndSelector + '"');
 
     return objStyles;
 }
-
+*/
 
 
 var trace = function(x){
     console.log(x);
 }
-var wrapTagPointers = function(str){
 
-//If contains html
-    if(str.search(/[<>]/)!==-1){
+var wrapTagPointers = function(str, markers){
+    return new WrapTagPointers().init(str, markers);
+}
 
-//str = str.substring(0,100) + '<BIB>' + str.substr(100);
+var WrapTagPointers = function(){};
 
-        // remove comments
-        str = str.replace(/-->/g,'¬');
-        str = str.replace(/<\!--[^¬]*¬/g,'');
+WrapTagPointers.prototype = {
 
-        // fix self closing
-        str = str.replace(/<(img|hr|br|meta|area|base|col|command|embed|input|keygen|link|param|source|track|wbr)([^>]*)\/?>/g,'<$1' + '$2/>');
+    init:function(str, markers){
 
-        var strMarkerStart = '\u0398';
-        var strMarkerEnd = '\u20AA';  
-        var strMarkerHandle = '\u20A9';
+        str = this.fixQuotes(str);
 
-        //loop all tags and wrap with markers
-        //set markers
-        //convert:     <p></p>
-        //to:        �<p></p>`
-        str = str.replace(/(<\w+([\s\:][^>]*[^\/])?>)/g, strMarkerStart + "$1");
-        str = str.replace(/(<\/\w+([\s\:][^>]*)?>)/g,"$1"+strMarkerEnd);
+        var strMarkerStart = markers.strMarkerStart;
+        var strMarkerEnd = markers.strMarkerEnd;
+        var strMarkerHandle = markers.strMarkerHandle;
+        var strMarkerEndComment = markers.strMarkerEndComment;
+
+    //If contains html
+        if(str.search(/[<>]/)!==-1){
+
+    //str = str.substring(0,100) + '<BIB>' + str.substr(100);
+
+            // remove comments
+            //str = str.replace(/-->/g,'¬');
+            //str = str.replace(/<\!--[^¬]*¬/g,'');
+
+            // fix self closing
+            str = this.fixSelfClosing(str);
+
+            //loop all tags and wrap with markers
+            //set markers
+            //convert:     <p></p>
+            //to:        �<p></p>`
+            str = str.replace(/(<\w+([\s\:][^>]*[^\/])?>)/g, strMarkerStart + "$1");
+            str = str.replace(/(<\/\w+([\s\:][^>]*)?>)/g,"$1"+strMarkerEnd);
 
 
-        //Loop through each wrapped tag and add a handle marker around it. Example:
-        //search: �(<(tag) >...</(tag)>)`
-        //replace with: ¬1 <(tag) >...</(tag)>¬1
-        //replace with: ¬2 <(tag) >...</(tag)>¬2
-        //replace with: ¬3 <(tag) >...</(tag)>¬3
-        //etc...
+            //Loop through each wrapped tag and add a handle marker around it. Example:
+            //search: �(<(tag) >...</(tag)>)`
+            //replace with: ¬1 <(tag) >...</(tag)>¬1
+            //replace with: ¬2 <(tag) >...</(tag)>¬2
+            //replace with: ¬3 <(tag) >...</(tag)>¬3
+            //etc...
 
-        var intC = 0,
-        regI = RegExp(strMarkerStart+"(<(\\w[^\\s]*)[^\\/][^"+strMarkerStart+strMarkerEnd+"]*<\\/\\2\\s*>)"+strMarkerEnd,'g');
-        var fnReplace = function(){
-            var arg = arguments;
-            var strA = ((strMarkerHandle + intC + ' ') +  arg[1] + (strMarkerHandle + intC + ' '));
-            ++intC;
-            return strA;
+            var intC = 0,
+            regI = RegExp(strMarkerStart+"(<(\\w[^\\s]*)[^\\/][^"+strMarkerStart+strMarkerEnd+"]*<\\/\\2\\s*>)"+strMarkerEnd,'g');
+            var fnReplace = function(){
+                var arg = arguments;
+                var strA = ((strMarkerHandle + intC + ' ') +  arg[1] + (strMarkerHandle + intC + ' '));
+                ++intC;
+                return strA;
+            }
+            // Wrap uncollapsed tags
+            while(str.search(regI)!== -1) {str = str.replace(regI,fnReplace);}
+
+            // Wrap collapsed/self closing tags
+            str = str.replace(/(\<[^>]*\/>)/g,fnReplace);
+
+                
+            str = this.removePointersInComments(str, strMarkerHandle, strMarkerEndComment);
+
+            str = this.testBadHtml(str, strMarkerStart, strMarkerEnd);
+
+        }else{
+            //not valid, firebug would show errors.
+            trace('You have not supplied any html!');
         }
-        //wrap uncollapsed tags
-        while(str.search(regI)!== -1) {str = str.replace(regI,fnReplace);}
-
-        //wrap collapsed/self closing tags
-        str = str.replace(/(\<[^>]*\/>)/g,fnReplace);
 
 
-        // test bad html
+        return str;
+    },
+    fixSelfClosing:function(str){
+        return str.replace(/<(img|hr|br|meta|area|base|col|command|embed|input|keygen|link|param|source|track|wbr)([^>]*)\/?>/g,'<$1' + '$2/>');
+    },
+    fixQuotes:function(html){
+
+        // find
+        // <input disabled selected=\'selected and something\' dude checked="checked" whatever whatever2/>
+
+        // replace with
+        // <input disabled selected="selected and something" dude checked="checked" whatever whatever2/>
+      
+        var regAttrApos = /(<[^<>]*\s)(\w[^\=<>\s\'\"]*)\=\'([^\']*)\'/g;
+        while(html.search(regAttrApos) !== -1){
+            html = html.replace(regAttrApos,'$1' + '$2="$3"');
+        }
+      
+        // find
+        // <input disabled selected=\'selected and something\' dude checked="checked" whatever whatever2/>
+
+        // replace with
+        // <input disabled="disabled" selected="selected and something" dude="dude" checked="checked" whatever="whatever" whatever2="whatever2"/>
+      
+      
+        var regAttrNothing = /(<\w[^\s<>]*)((\s+\w[^\=<>\s\'\"]*\=\"[^\"]*\")*)\s(\w[^\=<>\s\'\"\/]*)(\s|\/|>)/g;  
+        while(html.search(regAttrNothing) !== -1){           
+          html = html.replace(regAttrNothing,'$1' + '$2' + ' ' + '$4' + '="' + '$4' + '"' + '$5');
+        }
+
+        return html;
+    },    
+    testBadHtml:function(str, strMarkerStart, strMarkerEnd){
+        // Test bad html
         var intStartBad = str.lastIndexOf(strMarkerStart);
         var intEndBad = str.search(strMarkerEnd);
         if(intStartBad!==-1){
@@ -830,60 +890,47 @@ var wrapTagPointers = function(str){
 
             return null;
         }
+        return str;
+    },
+    removePointersInComments:function(str, strMarkerHandle, strMarkerEndComment){
 
-    }else{
-        //not valid, firebug would show errors.
-        trace('You have not supplied any html!');
+        // Remove tagpointers inside comments /**/ or <!-- --> or <![CDATA[ ]]> 
+        str = str.replace(/(\-\-\>|\*\/|\\]\\]>)/g,'$1' + strMarkerEndComment);            
+        var regInsideComments = RegExp('((<\\!--|\\/\\*|<\\!\\[CDATA)[^\\' + strMarkerEndComment + '\\' + strMarkerHandle + ']*' + ')\\' + strMarkerHandle + '\\d+ ','gi');      
+        while(str.search(regInsideComments) !==-1){                   
+          str = str.replace(regInsideComments,'$1');
+        }
+        str = str.replace(RegExp('\\' + strMarkerEndComment,'g'),'');
+        
+        // Remove tagpointers inside script comments //
+        str = str.replace(/(<\/script\s*>)/g,'$1' + strMarkerEndComment);            
+        var regInsideScriptComments = RegExp('(<script(\s|>)[^\\' + strMarkerEndComment + ']*\\/\\/[^\\n\\r\\f\\' + strMarkerEndComment + ']*)\\' + strMarkerHandle + '\\d+ ','gi');            
+        while(str.search(regInsideScriptComments) !==-1){                   
+          str = str.replace(regInsideScriptComments,'$1');
+        }
+        str = str.replace(RegExp('\\' + strMarkerEndComment,'g'),'');     
+
+        return str;   
     }
-
-
-    return str;
 }
 
-var fixQuotes = function(html){
+var createHtmlAsJson = function(html, strMarkerHandle){
 
-    // find
-    // <input disabled selected=\'selected and something\' dude checked="checked" whatever whatever2/>
-
-    // replace with
-    // <input disabled selected="selected and something" dude checked="checked" whatever whatever2/>
-  
-    var regAttrApos = /(<[^<>]*\s)(\w[^\=<>\s\'\"]*)\=\'([^\']*)\'/g;
-    while(html.search(regAttrApos) !== -1){
-        html = html.replace(regAttrApos,'$1' + '$2="$3"');
-    }
-  
-    // find
-    // <input disabled selected=\'selected and something\' dude checked="checked" whatever whatever2/>
-
-    // replace with
-    // <input disabled="disabled" selected="selected and something" dude="dude" checked="checked" whatever="whatever" whatever2="whatever2"/>
-  
-  
-    var regAttrNothing = /(<\w[^\s<>]*)((\s+\w[^\=<>\s\'\"]*\=\"[^\"]*\")*)\s(\w[^\=<>\s\'\"\/]*)(\s|\/|>)/g;  
-    while(html.search(regAttrNothing) !== -1){           
-      html = html.replace(regAttrNothing,'$1' + '$2' + ' ' + '$4' + '="' + '$4' + '"' + '$5');
-    }
-
-    return html;
-}
-
-var createHtmlAsJson = function(html, objParent){
+    var objParent = (arguments.length > 2)?arguments[2]:{};
+    var intLineNum = (arguments.length > 3)?arguments[3]:0;
+    
     var arrChildren = [];
   
-    
+
     // TODO:, reduce these down to one, by doing a find and replace on all attributes to ensure they are all one type, ie attr="dbl quoted value"
     var regAttr1 = /\s([^\=<>\s\'\"]+)\=\"([^\"]*)\"/g;
 
-    
-    // TODO: supply this marker to the function, to save redeclaring it.
-    var strMarkerHandle = '\u20A9';    
   
     // Get children of each top element.
     // TODO: supply this regex to the function, to save redeclaring it.
     var regPairs = new RegExp('(\\' + strMarkerHandle + '(\\d+) <(\\w[^\\s<>]*)([^<>]*)>)([\\w\\W]*)\\' + strMarkerHandle + '\\2 ','g');        
 
-    if(html.search(regPairs) ===-1){      
+    if(html.search(regPairs) === -1){
       arrChildren.push({
         elem:'textNode',
         content:html
@@ -896,32 +943,39 @@ var createHtmlAsJson = function(html, objParent){
       var arrMatch = null;
       var obj;
       while(arrMatch = regPairs.exec(html)){          
+             
         
         obj = {};
         
-        var elem = arrMatch[3];
+        
+        //var intElemLineNum = intLineNum + arrMatch.index;
+        var intElemLineNum = intLineNum + (html.substring(0, arrMatch.index).split('\n').length - 1);
+        
+        var elem = arrMatch[3];                 
         var isSelfClosing = elem.lastIndexOf('/')!==-1 || false;
         var content = (!isSelfClosing)? arrMatch[5] :null;
         var attr = arrMatch[4] || false;
 
         obj.elem = elem;
-        //obj.isSelfClosing = isSelfClosing;           
-          
+        obj.line = intElemLineNum;
+        
+        //obj.isSelfClosing = isSelfClosing;                                     
         
         if(attr){
           var arrAttr;
+          obj.attr = {};
           
           // TODO: only have one while, for one type of attribute supplied.
           while(arrAttr = regAttr1.exec(attr)){
             var key = arrAttr[1];
             var val = arrAttr[2];
-            obj[key] = val;          
+            obj.attr[key] = val;          
           }
         }
 
         if(content){
           content = content.substring(0, content.lastIndexOf('</'));
-          obj.children = createHtmlAsJson(content, obj);
+          obj.children = createHtmlAsJson(content, strMarkerHandle, obj, intElemLineNum);
           
         }  
         if(objParent.elem){
@@ -933,11 +987,9 @@ var createHtmlAsJson = function(html, objParent){
         }   
     }  
   }
-  return arrChildren;    
+  return arrChildren;   
 
-
-
-    /* This method should create example:
+             /* This method should create example:
 var json = [{
   classes:'bodyclass',
   children:[
@@ -983,6 +1035,7 @@ var json = [{
   ]          
 }] 
     */
+
 }
 
 var reportMultipleClassesWithSameProps = function(arrHtmlJson){
@@ -991,13 +1044,20 @@ var reportMultipleClassesWithSameProps = function(arrHtmlJson){
 
 var getHtmlAsJson = function(html){
     // remove everything outside body
-    html = html.replace(/^[\w\W]*(<body(\s[^<>]*>|>)[\w\W]*<\/body\s*>)[\w\W]*$/gi,'$1');
-    html = fixQuotes(html);
-    var strWrapped = wrapTagPointers(html);
+    //html = html.replace(/^[\w\W]*(<body(\s[^<>]*>|>)[\w\W]*<\/body\s*>)[\w\W]*$/gi,'$1');
+
+    var markers = {
+        strMarkerStart : '\u0398',
+        strMarkerEnd : '\u20AA',
+        strMarkerHandle : '\u20A9',
+        strMarkerEndComment : '\u03C8'
+    }
+
+    var strWrapped = wrapTagPointers(html, markers);
     
 console.log('html wrapped with tag pointers = ',strWrapped);
 
-    var arrHtmlJson = createHtmlAsJson(strWrapped, {});
+    var arrHtmlJson = createHtmlAsJson(strWrapped, markers.strMarkerHandle);
 
 console.log('arrHtmlJson =');
 console.dir(arrHtmlJson);
@@ -1015,7 +1075,7 @@ HTMLHint.addRule({
 
         var strSelectors = '.theClass1.theClass2';
         var styles = $('#styles').val();
-        var objStyles = getStyleBlocksPerClass(styles, strSelectors);
+        var objStyles = styleBlocks(styles, strSelectors);
 
 //console.log('objStyles = ');
 //console.dir(objStyles);
