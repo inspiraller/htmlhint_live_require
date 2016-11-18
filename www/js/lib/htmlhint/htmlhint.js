@@ -840,14 +840,41 @@ var wrapTagPointers = function(str){
     return str;
 }
 
+var fixQuotes = function(html){
+
+    // find
+    // <input disabled selected=\'selected and something\' dude checked="checked" whatever whatever2/>
+
+    // replace with
+    // <input disabled selected="selected and something" dude checked="checked" whatever whatever2/>
+  
+    var regAttrApos = /(<[^<>]*\s)(\w[^\=<>\s\'\"]*)\=\'([^\']*)\'/g;
+    while(html.search(regAttrApos) !== -1){
+        html = html.replace(regAttrApos,'$1' + '$2="$3"');
+    }
+  
+    // find
+    // <input disabled selected=\'selected and something\' dude checked="checked" whatever whatever2/>
+
+    // replace with
+    // <input disabled="disabled" selected="selected and something" dude="dude" checked="checked" whatever="whatever" whatever2="whatever2"/>
+  
+  
+    var regAttrNothing = /(<\w[^\s<>]*)((\s+\w[^\=<>\s\'\"]*\=\"[^\"]*\")*)\s(\w[^\=<>\s\'\"\/]*)(\s|\/|>)/g;  
+    while(html.search(regAttrNothing) !== -1){           
+      html = html.replace(regAttrNothing,'$1' + '$2' + ' ' + '$4' + '="' + '$4' + '"' + '$5');
+    }
+
+    return html;
+}
+
 var createHtmlAsJson = function(html, objParent){
     var arrChildren = [];
   
     
     // TODO:, reduce these down to one, by doing a find and replace on all attributes to ensure they are all one type, ie attr="dbl quoted value"
     var regAttr1 = /\s([^\=<>\s\'\"]+)\=\"([^\"]*)\"/g;
-    var regAttr2 = /\s([^\=<>\s\'\"]+)\=\'([^\']*)\'/g;
-    var regAttr3 = /\s([^\=<>\s\'\"]+)\=([^\s<>\"\']*)(\s|>|$)/g;
+
     
     // TODO: supply this marker to the function, to save redeclaring it.
     var strMarkerHandle = '\u20A9';    
@@ -886,16 +913,6 @@ var createHtmlAsJson = function(html, objParent){
           
           // TODO: only have one while, for one type of attribute supplied.
           while(arrAttr = regAttr1.exec(attr)){
-            var key = arrAttr[1];
-            var val = arrAttr[2];
-            obj[key] = val;          
-          }
-          while(arrAttr = regAttr2.exec(attr)){
-            var key = arrAttr[1];
-            var val = arrAttr[2];
-            obj[key] = val;          
-          }          
-          while(arrAttr = regAttr3.exec(attr)){
             var key = arrAttr[1];
             var val = arrAttr[2];
             obj[key] = val;          
@@ -975,6 +992,7 @@ var reportMultipleClassesWithSameProps = function(arrHtmlJson){
 var getHtmlAsJson = function(html){
     // remove everything outside body
     html = html.replace(/^[\w\W]*(<body(\s[^<>]*>|>)[\w\W]*<\/body\s*>)[\w\W]*$/gi,'$1');
+    html = fixQuotes(html);
     var strWrapped = wrapTagPointers(html);
     
 console.log('html wrapped with tag pointers = ',strWrapped);
