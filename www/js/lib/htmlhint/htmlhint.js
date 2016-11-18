@@ -1062,6 +1062,25 @@ console.log('html wrapped with tag pointers = ',strWrapped);
 console.log('arrHtmlJson =');
 console.dir(arrHtmlJson);
 
+    /*
+    // this is just for testing line numbers are correct.
+    function recurseArrToTestLines(arrHtmlJson, html){
+        for(var i = 0, intLen = arrHtmlJson.length; i < intLen; ++i){
+            var obj = arrHtmlJson[i];
+            console.log('########################');
+            console.log('elem = ', obj.elem);   
+            console.log('line = ', obj.line);  
+            var arrLines = html.split('\n');
+            console.log('line extract = ', arrLines[obj.line]);
+            if(obj.children){
+                recurseArrToTestLines(obj.children, html);
+            }
+        }
+
+    }
+    recurseArrToTestLines(arrHtmlJson, html);
+    */
+
     return arrHtmlJson;
 }
 
