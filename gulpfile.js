@@ -17,7 +17,7 @@ gulp.task('server', function() {
 });
 
 
-gulp.task('testKarma', function (done) {
+gulp.task('test', function (done) {
 
   new KarmaTestServer({
     configFile: require('path').resolve('karma.conf.js'),

@@ -296,6 +296,14 @@
         </div>
     </div>
 
-    <script src="/js/lib/require.js" data-main="/js/require-config-and-main"></script>  
+    <script src="/js/lib/require.js"></script>
+    <script src="/js/require-config.js"></script>  
+    <script>
+        requirejs.config(fnRequireConfig());
+        
+        require(['app'],function(app){
+
+        });
+    </script>
   </body>
 </html>

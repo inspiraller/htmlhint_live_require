@@ -6,6 +6,21 @@ for (var file in window.__karma__.files) {
 }
 
 
+var objConfig = fnRequireConfig();
+
+// everything in tests runes from base/
+objConfig.baseUrl = '/base/www/' + objConfig.baseUrl;
+
+// ask Require.js to load these files (all our tests)
+objConfig.deps = tests;
+
+// start test run, once Require.js is done
+objConfig.callback = window.__karma__.start;
+
+requirejs.config(objConfig);
+
+// original 
+/*
 requirejs.config({
         baseUrl:'/base/www/js/modules',
     paths: {
@@ -39,4 +54,7 @@ requirejs.config({
     // start test run, once Require.js is done
     callback: window.__karma__.start
 });
+
+
+*/
 

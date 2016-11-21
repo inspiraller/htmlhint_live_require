@@ -1,32 +1,79 @@
-define(['htmlhint'], function(htmlhint) {
+define(['styleBlocks'], function(styleBlocks) {
+    // note: if styleBlocks isn't defined in test-main.js then it won't get pulled in.
 
-    var ruleSets = {
-        'steves-rule-capture-all':!0
-    };
+   var strAllStyles = `
+        .nav{
+            margin:10px;
+        }
+        .genericUL{
+            margin:20px;
+        }
+        .formUL,
+        .footerUL{
+            margin:40px;
+        }
+        .something .nav{
+            margin:50px;
+        }
+    `;
+
+    var strWhen = 'When styles = ' + strAllStyles.replace(/\n/g,'<br/>');
+    describe(strWhen, function() { // when...
 
 
 
-    describe('htmlhint test 1', function() {
+        var strSelectors = `.footerUL.Whatever`;
+        var strAndWhen = '<br/><br/>And multiple selectors = ' + strSelectors;
 
-        it('is an example:', function() {
-          
+        describe(strAndWhen, function() { // and when...
 
-            var messages = HTMLHint.verify('<div>hello mum</div>', ruleSets);
-            var message;
-            for(var i=0, l=messages.length;i<l;i++){
-                message = messages[i];
+            var objStyles = styleBlocks(strAllStyles, strSelectors);
 
-                console.log('message = ' + message.message);
-                
-            }
+            it("Then = {'.footerUL':[{block:'.footerUL{ }', all:'.formUL,.footerUL{}', line:0}}", function() {// then 
+                expect(
+                    objStyles['.footerUL'][0].block
+                ).toBeTruthy();
 
-
-
-            expect('bling').toEqual('ring');
-
+            });
         });
 
 
+        var strSelectors = `.nav.contactUL`;
+        var strAndWhen = '<br/><br/>And multiple selectors = ' + strSelectors;
+
+        describe(strAndWhen, function() { // and when...
+
+            var objStyles = styleBlocks(strAllStyles, strSelectors);
+
+            it("Then = {'.nav':[{},{}],'.contactUL':[]'}", function() {// then 
+                expect(
+                    objStyles['.nav'].length
+                ).toEqual(2);
+
+                expect(
+                    objStyles['.contactUL'].length
+                ).toEqual(0);
+            });
+        });
+
+
+        var strSelectors = `.footerUL.nav`;
+        var strAndWhen = '<br/><br/>And multiple selectors = ' + strSelectors;
+
+        describe(strAndWhen, function() { // and when...
+
+            var objStyles = styleBlocks(strAllStyles, strSelectors);
+
+            it("Then = {'.footerUL':[{}],'.nav':[{},{}]'}", function() {// then 
+                expect(
+                    objStyles['.footerUL'].length
+                ).toEqual(1);
+
+                expect(
+                    objStyles['.nav'].length
+                ).toEqual(2);
+            });
+        });
 
     });
 

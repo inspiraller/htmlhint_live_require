@@ -26,6 +26,7 @@ module.exports = function(config) {
         {pattern: 'www/js/modules/**/*.js', included: false},
         {pattern: 'test/**/*Spec.js', included: false},
 
+        'www/js/require-config.js',
         'test/test-main.js',
     ],
 
@@ -47,7 +48,7 @@ module.exports = function(config) {
             
       // Optional 
       pageTitle: 'Unit Tests',
-      subPageTitle: 'A sample project description',
+      subPageTitle: 'HTMLHint helpers',
       groupSuites: true,
       useCompactStyle: true,
       useLegacyStyle: true

@@ -1,4 +1,18 @@
-define(['jquery','htmlhint','csslint','jshint'],function($, HTMLHint, CSSLint, JSHINT) {
+define([
+    'jquery',
+    'styleBlocks',
+    'wrapTagPointers',
+    'createHtmlAsJson',
+    'htmlhint',
+    'csslint',
+    'jshint'],function(
+        $, 
+        styleBlocks, 
+        wrapTagPointers, 
+        createHtmlAsJson, 
+        HTMLHint, 
+        CSSLint, 
+        JSHINT) {
 
     // removed ace, because it isn't working properly when typing in text
     var ace = {
