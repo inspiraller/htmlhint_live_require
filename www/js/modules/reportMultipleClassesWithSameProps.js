@@ -39,27 +39,27 @@ ReportMultipleClassesWithSameProps.prototype = {
     recurseJson:function(arrHtmlJson, html, strAllStyles){
         var objReport = {};
         for(var i = 0, intLen = arrHtmlJson.length; i < intLen; ++i){
-            var obj = arrHtmlJson[i];
-            var attr = obj.attr;
+            var objElem = arrHtmlJson[i];
+            var attr = objElem.attr;
             var strClasses = (attr)?attr.class:'';
 
-            //console.log('line = ', obj.line);  
+            //console.log('line = ', objElem.line);  
             //var arrLines = html.split('\n');
-            //console.log('line extract = ', arrLines[obj.line]);
+            //console.log('line extract = ', arrLines[objElem.line]);
 
             if(strClasses){
                 var isMultipleClasses = strClasses.split(' ').length > 1;
                 if(isMultipleClasses){
-                    objReport = this.filterOutNonParents(strAllStyles, strClasses, obj);
+                    objReport = this.filterOutNonParents(strAllStyles, strClasses, objElem);
                 }
             }
-            if(obj.children){
-                objReport = this.recurseJson(obj.children, html, strAllStyles);
+            if(objElem.children){
+                objReport = this.recurseJson(objElem.children, html, strAllStyles);
             }
         }
         return objReport;
     },
-    filterOutNonParents:function(strAllStyles, strClasses, obj){   
+    filterOutNonParents:function(strAllStyles, strClasses, objElem){   
 
 // TO REMOVE - 
 // THIS IS JUST FOR TESTING
@@ -85,13 +85,13 @@ if(strClasses !== 'theClass1 theClass2'){
         for(var i=0, intLen = arrClasses.length; i < intLen; ++i){
             var strClass = arrClasses[i];
             objStylesFiltered['.' + strClass] = [];
-            objStylesFiltered = this.filterOutParents(strClass, objStyles, obj, objStylesFiltered);
+            objStylesFiltered = this.filterOutParents(strClass, objStyles, objElem, objStylesFiltered);
         }
 
 
 console.log('#########################################');       
-console.log('obj = ', obj);
-console.log('elem = ', obj.elem);
+console.log('objElem = ', objElem);
+console.log('elem = ', objElem.elem);
 console.log('strClasses= ', strClasses);    
 
 //console.log('strAllStyles = ', strAllStyles); 
@@ -103,7 +103,7 @@ console.log('objStylesFiltered = ',  objStylesFiltered);
         return {};
 
     },
-    filterOutParents:function(strClass, objStyles, obj, objStylesFiltered){
+    filterOutParents:function(strClass, objStyles, objElem, objStylesFiltered){
         var arrStyles = objStyles['.' + strClass];
 
 console.log('#########################################');  
@@ -115,7 +115,7 @@ console.log('strClass = ', strClass);
             var block = objEachStyle.block;
             block = this.removeClassFromEndOfBlock(block, strClass);
             var strPrecedingSelector = this.getPreceedingSelector(block);        
-            var isParent = this.recurseParentsToMatchPreceedingSelectors(block, strPrecedingSelector, obj.parent);
+            var isParent = this.recurseParentsToMatchPreceedingSelectors(block, strPrecedingSelector, objElem.parent);
             
             if(isParent){
                 objStylesFiltered['.' + strClass].push(objEachStyle);
@@ -137,40 +137,83 @@ console.log('strClass = ', strClass);
         return strPrecedingSelector;
 
     },
-    recurseParentsToMatchPreceedingSelectors:function(block, strPrecedingSelector, obj){
+    recurseParentsToMatchPreceedingSelectors:function(block, strPrecedingSelector, objElem){
 
 //console.log('___________________________________________________________');
 //console.log('block = ', block)
 //console.log('strPrecedingSelector="' +  strPrecedingSelector + '"');
-//console.log('obj = ', obj);
+//console.log('objElem = ', objElem);
 
 
         if(!strPrecedingSelector){          
             return true;
-        }else if(!obj){
+        }else if(!objElem){
             return false;
         }
-        var objCombinedClassOrId = this.getPreceedingClassFromCombinedClasses(strPrecedingSelector);
+
+        var hasGenericParentClassOrId = this.hasGenericParentClassOrId(block, strPrecedingSelector, objElem);
+
+        // TOD
+        // hasDirectParent
+        // hasDirectSibling
+        // hasGenericSibling
+        // hasElem
+        // hasSquare
+        // hasPseudo
+
+
+        return hasGenericParentClassOrId;
+    },
+
+    /*********************************************************************************************/
+    /* hasGenericParentClassOrId() - Generic, meaning non direct parent */
+    hasGenericParentClassOrId:function(block, strPrecedingSelector, objElem){
+        var objCombinedClassOrId = this.getParentsFromCombinedSelectors(strPrecedingSelector);
         var arrClasses = objCombinedClassOrId.arrClasses;
         var arrIds = objCombinedClassOrId.arrIds;
 
-        var hasMatchingClass = this.filterParentsByClass(obj, block, strPrecedingSelector, arrClasses);
-        var hasMatchingId = this.filterParentsById(obj, block, strPrecedingSelector, arrIds);
+        var hasMatchingClass = this.filterParentsByClass(objElem, block, strPrecedingSelector, arrClasses);
+        var hasMatchingId = this.filterParentsById(objElem, block, strPrecedingSelector, arrIds);
        
         if(arrClasses.length && hasMatchingClass &&  arrIds.length && hasMatchingId){
             return true;
         }else{
             return hasMatchingClass || hasMatchingId;
         }
-
-//  console.log('return false');
-        return false;
     },
-    filterParentsByClass:function(obj, block, strPrecedingSelector, arrClasses){
+    getParentsFromCombinedSelectors:function(strSelector){
+        var arrClasses = [];
+        var arrIds = [];
+        var isSiblingSelector = (strSelector.search(/[\+\~]\s*$/)!==-1)?true:false;
+
+        if(!isSiblingSelector){
+
+            // remove all parenthesis and square bracket matchers.
+            strSelector = strSelector.replace(/\[[^\[\]]*\]/g,'');
+            strSelector = strSelector.replace(/\([^\(\)]*\)/g,'');
+            
+            var regAllCombinedClasses = /([\.\#])[^\.\#\s\>\+\~\[\(\:]+/g;
+            var arrMatch;
+
+            while(arrMatch = regAllCombinedClasses.exec(strSelector)){
+                var idOrClass = arrMatch[1];
+                if(idOrClass === '.'){
+                    arrClasses.push(arrMatch[0]); 
+                }else{
+                    arrIds.push(arrMatch[0]); 
+                }
+            }
+        }
+        return {
+            arrClasses:arrClasses,
+            arrIds:arrIds
+        }
+    }, 
+    filterParentsByClass:function(objElem, block, strPrecedingSelector, arrClasses){
         if(arrClasses.length){
             for(var i = 0, intLen = arrClasses.length; i < intLen; ++i){
                 var strPrecedingClass = arrClasses[i];     
-                var attr = obj.attr;           
+                var attr = objElem.attr;           
                 if(!attr){
                     return false;
                 }
@@ -181,19 +224,19 @@ console.log('strClass = ', strClass);
                     block = this.removeClassFromEndOfBlock(block, strPrecedingClass);
                     var strPrevPrecedingSelector = this.getPreceedingSelector(block);
                 
-                    return this.recurseParentsToMatchPreceedingSelectors(block, strPrevPrecedingSelector, obj.parent);
+                    return this.recurseParentsToMatchPreceedingSelectors(block, strPrevPrecedingSelector, objElem.parent);
                 }else{
-                    return this.recurseParentsToMatchPreceedingSelectors(block, strPrecedingSelector, obj.parent);
+                    return this.recurseParentsToMatchPreceedingSelectors(block, strPrecedingSelector, objElem.parent);
                 }
             }
         }
         return false;
     },
-    filterParentsById:function(obj, block, strPrecedingSelector, arrIds){
+    filterParentsById:function(objElem, block, strPrecedingSelector, arrIds){
         if(arrIds.length){
             for(var i = 0, intLen = arrIds.length; i < intLen; ++i){
                 var strPrecedingId = arrIds[i];
-                var attr = obj.attr;
+                var attr = objElem.attr;
                 if(!attr){
                     return false;
                 }
@@ -202,9 +245,9 @@ console.log('strClass = ', strClass);
                     block = this.removeClassFromEndOfBlock(block, strPrecedingId);
                     var strPrevPrecedingSelector = this.getPreceedingSelector(block);
                 
-                    return this.recurseParentsToMatchPreceedingSelectors(block, strPrevPrecedingSelector, obj.parent);
+                    return this.recurseParentsToMatchPreceedingSelectors(block, strPrevPrecedingSelector, objElem.parent);
                 }else{
-                    return this.recurseParentsToMatchPreceedingSelectors(block, strPrecedingSelector, obj.parent);
+                    return this.recurseParentsToMatchPreceedingSelectors(block, strPrecedingSelector, objElem.parent);
                 }
             }
         }   
@@ -214,28 +257,6 @@ console.log('strClass = ', strClass);
         if(!strAll){ return false;}
         var regHasSelector = RegExp('(^|\\s)' +strSelector + '(\\s|$)');
         return (strAll.search(regHasSelector)!==-1)?true:false;  
-    },
-    getPreceedingClassFromCombinedClasses:function(strSelector){
-        // remove all parenthesis and square bracket matchers.
-        strSelector = strSelector.replace(/\[[^\[\]]*\]/g,'');
-        strSelector = strSelector.replace(/\([^\(\)]*\)/g,'');
-
-        var regAllCombinedClasses = /([\.\#])[^\.\#\s\>\+\~\[\(\:]+/g;
-        var arrMatch;
-        var arrClasses = [];
-        var arrIds = [];
-        while(arrMatch = regAllCombinedClasses.exec(strSelector)){
-            var idOrClass = arrMatch[1];
-            if(idOrClass === '.'){
-                arrClasses.push(arrMatch[0]); 
-            }else{
-                arrIds.push(arrMatch[0]); 
-            }
-        }
-        return {
-            arrClasses:arrClasses,
-            arrIds:arrIds
-        }
     }
 
 }

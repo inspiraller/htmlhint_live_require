@@ -124,10 +124,6 @@
 
 <textarea id="styles">
 
-    /* 0 difficult preceeding selector class */
-    .global .someParentWrapper::something[yo][harnessing  ][   'something']:something > .theClass1{
-        font-size:1px;
-    }
 
     /* 1 class separator */
     #grandDaddy .theClass1{
@@ -190,12 +186,8 @@
         font-size:8px;
     }
 
-    /* psuedo */
-    .something .theClass2:first-child.somethingElse{
-        font-size:8px;
-    }
 
-
+    /* the wrong class*/
     /* combined on end*/
     .whatever,
     .something .theClass2.somethingElse#somethingElse,
@@ -203,6 +195,18 @@
         font-size:8px;
     }
 
+    /* the wrong class */
+    /* psuedo */
+    .something .theClass2:first-child.somethingElse{
+        font-size:8px;
+    }
+
+
+    /* the wrong class */
+    /* 0 difficult preceeding selector class */
+    .global .someParentWrapper::something[yo][harnessing  ][   'something']:something > .theClass1{
+        font-size:1px;
+    }
 
     /* the wrong class */
     .theClass12{
