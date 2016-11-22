@@ -47,18 +47,37 @@ StyleBlocks.prototype = {
         var strReplaceComments = this.replaceComments(strMatch);
         var strCssProps = strMatch.replace(/^[^\{]*/,'');
         var arrMatchSameClass;
+        var props = this.getProps(strCssProps);
 
         while(arrMatchSameClass = regMatchSameClass.exec(strReplaceComments)){
             var strEach = arrMatchSameClass[2].replace(/^\s*/,'');
-            var strFiltered = strEach + strCssProps;
-          
+            var strFiltered = strEach + strCssProps;          
+
             obj[strClass].push({
                 line:intLine,
                 block:strFiltered,                    
-                all:strMatch
+                all:strMatch,
+                props:props
             }); 
         }
         return obj;
+    },
+    getProps:function(strCssProps){
+        if(strCssProps){
+            var reg = /[\{\;]\s*([^\:\s\;\}\{\!]+)\:\s*([^\;\:\}\{\!]+)/g;
+
+ 
+            var arr;
+            var props = {};
+            while(arr = reg.exec(strCssProps)){
+                var key = arr[1];
+                var val = arr[2]
+                props[key] = val;
+            }
+            return props;
+            
+        }
+        return {};
     },
     getLine : function(styles, intPos){
         var arrMatch = styles.substring(0, intPos).match(/\n/g);
