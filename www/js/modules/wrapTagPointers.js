@@ -40,6 +40,9 @@ WrapTagPointers.prototype = {
             str = str.replace(/(<\/\w+([\s\:][^>]*)?>)/g,"$1"+strMarkerEnd);
 
 
+
+            str = this.removePointersInComments(str, strMarkerStart, strMarkerEnd, strMarkerEndComment);
+
             //Loop through each wrapped tag and add a handle marker around it. Example:
             //search: �(<(tag) >...</(tag)>)`
             //replace with: ¬1 <(tag) >...</(tag)>¬1
@@ -62,7 +65,6 @@ WrapTagPointers.prototype = {
             str = str.replace(/(\<[^>]*\/>)/g,fnReplace);
 
                 
-            str = this.removePointersInComments(str, strMarkerHandle, strMarkerEndComment);
 
             str = this.testBadHtml(str, strMarkerStart, strMarkerEnd);
 
@@ -126,11 +128,11 @@ WrapTagPointers.prototype = {
         }
         return str;
     },
-    removePointersInComments:function(str, strMarkerHandle, strMarkerEndComment){
+    removePointersInComments:function(str, strMarkerStart, strMarkerEnd, strMarkerEndComment){
 
         // Remove tagpointers inside comments /**/ or <!-- --> or <![CDATA[ ]]> 
         str = str.replace(/(\-\-\>|\*\/|\\]\\]>)/g,'$1' + strMarkerEndComment);            
-        var regInsideComments = RegExp('((<\\!--|\\/\\*|<\\!\\[CDATA)[^\\' + strMarkerEndComment + '\\' + strMarkerHandle + ']*' + ')\\' + strMarkerHandle + '\\d+ ','gi');      
+        var regInsideComments = RegExp('((<\\!--|\\/\\*|<\\!\\[CDATA)[^\\' + strMarkerEndComment + '\\' + strMarkerStart + '\\'  + strMarkerEnd + ']*' + ')[\\' + strMarkerStart + '\\' + strMarkerEnd + ']','gi');      
         while(str.search(regInsideComments) !==-1){                   
           str = str.replace(regInsideComments,'$1');
         }
@@ -138,7 +140,7 @@ WrapTagPointers.prototype = {
         
         // Remove tagpointers inside script comments //
         str = str.replace(/(<\/script\s*>)/g,'$1' + strMarkerEndComment);            
-        var regInsideScriptComments = RegExp('(<script(\s|>)[^\\' + strMarkerEndComment + ']*\\/\\/[^\\n\\r\\f\\' + strMarkerEndComment + ']*)\\' + strMarkerHandle + '\\d+ ','gi');            
+        var regInsideScriptComments = RegExp('(<script(\s|>)[^\\' + strMarkerEndComment + ']*\\/\\/[^\\n\\r\\f\\' + strMarkerEndComment + ']*)[\\' + strMarkerStart + '\\'  + strMarkerEnd  + ']','gi');            
         while(str.search(regInsideScriptComments) !==-1){                   
           str = str.replace(regInsideScriptComments,'$1');
         }

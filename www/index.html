@@ -124,6 +124,11 @@
 
 <textarea id="styles">
 
+    /* 0 difficult preceeding selector class */
+    .global .someParentWrapper::something[yo][harnessing  ][   'something']:something > .theClass1{
+        font-size:1px;
+    }
+
     /* 1 class separator */
     #grandDaddy .theClass1{
         font-size:1px;
@@ -136,7 +141,7 @@
 
 
     /* parent sibling separator */
-    .parentDeep2_1_A + parentDeep2_2_B .theClass2{
+    .parentDeep2_1_A + .parentDeep2_2_B .theClass2{
         font-size:3px;
     }
 

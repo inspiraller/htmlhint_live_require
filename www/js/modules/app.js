@@ -3,6 +3,7 @@ define([
     'styleBlocks',
     'wrapTagPointers',
     'createHtmlAsJson',
+    'reportMultipleClassesWithSameProps',
     'htmlhint',
     'csslint',
     'jshint'],function(
@@ -10,6 +11,7 @@ define([
         styleBlocks, 
         wrapTagPointers, 
         createHtmlAsJson, 
+        reportMultipleClassesWithSameProps,
         HTMLHint, 
         CSSLint, 
         JSHINT) {

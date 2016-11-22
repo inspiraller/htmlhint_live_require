@@ -4,7 +4,7 @@
  * MIT Licensed
  */
 
-// depends on : styleBlocks.js, wrapTagPointers.js, createHtmlAsJson.js
+// depends on : styleBlocks.js, wrapTagPointers.js, createHtmlAsJson.js, reportMultipleClassesWithSameProps.js
 
 var HTMLHint = (function (undefined) {
 
@@ -697,99 +697,6 @@ console.log('strEndSelector = "' + strEndSelector + '"');
 }
 */
 
-var reportMultipleClassesWithSameProps  = function(arrHtmlJson, html){
-    new ReportMultipleClassesWithSameProps().init(arrHtmlJson, html);
-}
-var ReportMultipleClassesWithSameProps = function(){}
-ReportMultipleClassesWithSameProps.prototype = {
-    init:function(html, strAllStyles){
-
-        var arrHtmlJson = getHtmlAsJson(html);
-        this.recurseJson(arrHtmlJson, html, strAllStyles);
-    },        
-    recurseJson:function(arrHtmlJson, html, strAllStyles){
-        for(var i = 0, intLen = arrHtmlJson.length; i < intLen; ++i){
-            var obj = arrHtmlJson[i];
-            var attr = obj.attr;
-            var strClasses = (attr)?attr.class:'';
-
-            //console.log('line = ', obj.line);  
-            //var arrLines = html.split('\n');
-            //console.log('line extract = ', arrLines[obj.line]);
-
-            if(strClasses){
-                var isMultipleClasses = strClasses.split(' ').length > 1;
-                if(isMultipleClasses){
-                    this.reportClasses(strAllStyles, strClasses, obj);
-                }
-            }
-            if(obj.children){
-                this.recurseJson(obj.children, html, strAllStyles);
-            }
-        }
-    },
-    reportClasses:function(strAllStyles, strClasses, obj){   
-
-// TO REMOVE - 
-// THIS IS JUST FOR TESTING
-if(strClasses !== 'theClass1 theClass2'){
-    return;
-}     
-    // TODO:
-        // if an element has more than one class.
-        // search theClass in bundle.css and build an array of all items found, irrespective of parent or sibling classes.
-
-        // filter down the class by each preclass/id
-            // sibling
-            // parent
-                // repeat onto the next preclass/id until no more levels exist.
-                // once you have an array of all remaining classes - compare the properties, and if any are shared, provide error message.
-
-        strClasses = strClasses.replace(/(^|\s+)/g,'.');
-
-        var objStyles = styleBlocks(strAllStyles, strClasses);
-
-
-
-console.log('#########################################');       
-console.log('obj = ', obj);
-console.log('elem = ', obj.elem);
-console.log('strClasses= ', strClasses);    
-
-//console.log('strAllStyles = ', strAllStyles); 
-console.log('objStyles = ');
-console.dir(objStyles);
-
-    }
-
-}
-
-var getHtmlAsJson = function(html){
-    // remove everything outside body
-    //html = html.replace(/^[\w\W]*(<body(\s[^<>]*>|>)[\w\W]*<\/body\s*>)[\w\W]*$/gi,'$1');
-
-    var markers = {
-        strMarkerStart : '\u0398',
-        strMarkerEnd : '\u20AA',
-        strMarkerHandle : '\u20A9',
-        strMarkerEndComment : '\u03C8'
-    }
-
-    var strWrapped = wrapTagPointers(html, markers);
-    
-console.log('######################################################################################################');
-console.log('wrapped = ',strWrapped);
-
-    var arrHtmlJson = createHtmlAsJson(strWrapped, markers.strMarkerHandle);
-
-console.log('######################################################################################################');
-console.log('arrHtmlJson =');
-console.dir(arrHtmlJson);
-
-
-    return arrHtmlJson;
-}
-
 
 
 HTMLHint.addRule({
@@ -799,17 +706,14 @@ HTMLHint.addRule({
         var self = this;
         var strAllStyles = $('#styles').val();
 
-console.log('######################################################################################################');
-console.log('strAllStyles =');
-console.log(strAllStyles);
-
-
         var allEvent = function(event) {
             if(event.type == 'start'){
 
                 var html = event.html;
 
-                reportMultipleClassesWithSameProps(html, strAllStyles);
+                var objReport = reportMultipleClassesWithSameProps(html, strAllStyles);
+
+// TODO - reporter.error("you have multiple classes that set the same property", objReport.line, 0, self, event.raw);
 
                 reporter.error("steves test", event.line, event.col, self, event.raw);
             }

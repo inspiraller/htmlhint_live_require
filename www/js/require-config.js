@@ -38,7 +38,10 @@ var fnRequireConfig = function(){
             } ,
             'createHtmlAsJson': {
                 exports: 'createHtmlAsJson'
-            }             
+            },
+            'reportMultipleClassesWithSameProps':{
+                exports:'reportMultipleClassesWithSameProps'
+            }        
         }
     };
 }
