@@ -4,7 +4,7 @@
  * MIT Licensed
  */
 
-// depends on : styleBlocks.js, wrapTagPointers.js, createHtmlAsJson.js, reportMultipleClassesWithSameProps.js, styleBlocksFilter.js
+// depends on : styleBlocks.js, wrapTagPointers.js, createHtmlAsJson.js, styleBlocksFilter.js, reportMultipleClassesWithSameProps.js
 
 var HTMLHint = (function (undefined) {
 
@@ -658,47 +658,6 @@ HTMLHint.addRule({
     }
 });
 
-// experimental 
-/*
-var getEndSelector = function(strBlock){
-    // get end
-    var arrBlock = strBlock.split(' ');
-    for(k = arrBlock.length -1; k > -1; --k){
-        var strEnd = arrBlock[k];
-        if(strEnd.search(/^[\.\#\[]/)!==-1){
-            strEnd = strEnd.replace(/\{[\w\W]*$/,'');
-            return strEnd;
-        }
-    }
-    return null;
-}
-
-var filterStylesOnHtml = function(html, objStyles){
-
-    for(strSelector in objStyles){
-        var arrStyles = objStyles[strSelector];
-
-console.log('strSelector = ', strSelector);
-
-        for(var i = 0, intLen = arrStyles.length; i < intLen; ++i){
-            var strBlock = arrStyles[i].block;
-
-
-console.log('####################################################################');
-    console.log('strBlock = ',strBlock);
-            var strEndSelector = getEndSelector(strBlock);
-console.log('strEndSelector = "' + strEndSelector + '"');
-
-        }
-    }
-
-
-    return objStyles;
-}
-*/
-
-
-
 HTMLHint.addRule({
     id: "steves-rule-capture-all",
     description: "Test to capture the whole html on any change",
@@ -711,13 +670,34 @@ HTMLHint.addRule({
 
                 var html = event.html;
 
-                var objReport = reportMultipleClassesWithSameProps(html, strAllStyles);
+                var arrReport = reportMultipleClassesWithSameProps(html, strAllStyles);
 
-console.log('htmlhint.js - objReport = ', objReport);
+                for(var i=0, intLen = arrReport.length; i < intLen; ++i){
+                    var objReport = arrReport[i];
+                    var objElem = objReport.elem;
+                    var strSelectors = '';
+                    var arrSelectors = objReport.matchingSelectors;
+                    for(var m = 0, intLenM = arrSelectors.length; m < intLenM; ++m){
+                        var objSelector = arrSelectors[m];
 
-// TODO - reporter.error("you have multiple classes that set the same property", objReport.line, 0, self, event.raw);
+                        strSelectors += '\n'; 
 
-                reporter.error("steves test", event.line, event.col, self, event.raw);
+                        var block = objSelector.block;
+                        var objMatchesOtherProps = objSelector.matchesOtherProps; 
+                        var arrProp = Object.keys(objMatchesOtherProps);
+                        var strProp = arrProp[0];
+                        strSelectors += '\n';                        
+                        strSelectors +=  block.substring(0, block.indexOf('{') +1) + ' ' + strProp + ': }';
+
+                        strSelectors += '\n';  
+                        var objOtherProp = objMatchesOtherProps[strProp];
+                        var objOtherPropBlock = objOtherProp.block;
+                        strSelectors +=  objOtherPropBlock.substring(0, objOtherPropBlock.indexOf('{') +1) + ' ' + strProp + ': }';                        
+                    }
+                    var strReport = "This element has multiple classes with the same properties." + strSelectors;
+                    reporter.error(strReport, objElem.line, 0, self, event.raw);                    
+                }
+
             }
             parser.removeListener("start", allEvent);
         };
