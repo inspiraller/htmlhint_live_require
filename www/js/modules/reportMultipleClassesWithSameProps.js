@@ -7,9 +7,9 @@ ReportMultipleClassesWithSameProps.prototype = {
     init:function(html, strAllStyles){
 
         var arrHtmlJson = this.getHtmlAsJson(html);
-        var objReport = this.recurseJson(arrHtmlJson, html, strAllStyles);
+        var arrReport = this.recurseJson(arrHtmlJson, html, strAllStyles);
 
-        return objReport;
+        return arrReport;
     },  
     getHtmlAsJson : function(html){
         // remove everything outside body
@@ -37,8 +37,8 @@ ReportMultipleClassesWithSameProps.prototype = {
         return arrHtmlJson;
     },
 
-    recurseJson:function(arrHtmlJson, html, strAllStyles){//, objReport
-        var objReport = (arguments.length > 3)?arguments[3]:{};
+    recurseJson:function(arrHtmlJson, html, strAllStyles){//, arrReport
+        var arrReport = (arguments.length > 3)?arguments[3]:[];
         
         for(var i = 0, intLen = arrHtmlJson.length; i < intLen; ++i){
             var objElem = arrHtmlJson[i];
@@ -52,23 +52,24 @@ ReportMultipleClassesWithSameProps.prototype = {
             if(strClasses){
                 var isMultipleClasses = strClasses.split(' ').length > 1;
                 if(isMultipleClasses){
-                    objReport = this.filterOutNonParents(strAllStyles, strClasses, objElem, objReport);
+                    arrReport = this.filterOutNonParents(strAllStyles, strClasses, objElem, arrReport);
                 }
             }
             if(objElem.children){
-                objReport = this.recurseJson(objElem.children, html, strAllStyles, objReport);
+                arrReport = this.recurseJson(objElem.children, html, strAllStyles, arrReport);
             }
         }
-        return objReport;
+        return arrReport;
     },
-    filterOutNonParents:function(strAllStyles, strClasses, objElem, objReport){   
+    filterOutNonParents:function(strAllStyles, strClasses, objElem, arrReport){   
 
 
 // TO REMOVE - 
 // THIS IS JUST FOR TESTING
-if(strClasses !== 'theClass1 theClass2'){
-    return {};
-}     
+//if(strClasses !== 'theClass1 theClass2'){
+    //return arrReport;
+//}     
+
     // TODO:
         // if an element has more than one class.
         // search theClass in bundle.css and build an array of all items found, irrespective of parent or sibling classes.
@@ -85,9 +86,72 @@ if(strClasses !== 'theClass1 theClass2'){
 
         var objStylesFiltered = styleBlocksFilter(strClasses, objElem, objStyles);
 
-        //objReport.add
-        return objReport;
+        var arrMatchingSelectors = this.compareProps(objStylesFiltered);
+
+        if(arrMatchingSelectors.length > 0){
+            arrReport.push({
+                elem:objElem,
+                matchingSelectors:arrMatchingSelectors
+            })
+        }
+
+        //arrReport.add
+        return arrReport;
 
         //return objStylesFiltered;
+    },
+    compareProps:function(objStylesFiltered){
+        var isMultipleClasses = Object.keys(objStylesFiltered).length > 1;
+        var arrStylesMatching = [];
+
+        if(isMultipleClasses){
+            var arrAllProps = [];
+
+            var strTheClass, i, p;
+            for(strTheClass in objStylesFiltered){
+                var arrClass = objStylesFiltered[strTheClass];                
+                var strThisClassAllProps = '';
+
+                for(i = 0, intLen = arrClass.length; i < intLen; ++i){
+                    var objClass = arrClass[i];
+                    var objClassProps = objClass.props;
+                    
+
+                    for(p in objClassProps){
+                        var prop = p;
+                        var val = objClassProps[p];
+
+                        prop = this.matchFuzzyPropNames(prop);
+
+                        var arrAllPropsFiltered = arrAllProps.filter(function(item){
+                            return item[prop];
+                        });
+                        var objPropInOtherSelector =  arrAllPropsFiltered[0] || null;
+
+                        if(objPropInOtherSelector && strThisClassAllProps.indexOf(',' + prop + ',') === -1){
+
+                            var obj = Object.assign({
+                                matchesOtherProps:objPropInOtherSelector
+                            }, objClass);
+
+                            arrStylesMatching.push(obj);
+                        }else{
+                            strThisClassAllProps+=',' + prop + ',';    
+                        }
+
+                        var objPropToClass = {};
+                        objPropToClass[prop] = objClass;
+                        arrAllProps.push(objPropToClass);
+                        
+                    }
+                }
+            }
+        }        
+        return arrStylesMatching;
+
+    },
+    matchFuzzyPropNames:function(prop){
+        var regFuzzy = /^(margin|padding)\-[\w\W]*$/;
+        return prop.replace(regFuzzy,'$1');
     }
 }

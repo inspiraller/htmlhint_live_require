@@ -31,12 +31,13 @@ StyleBlocks.prototype = {
             var regMatchWholeBlock = RegExp('(^|\\n)[^\\{\\}]*' + encodedSelector + '\\s*[\\,\\{\\.\\#\\:\\[][^\\}]*\\}','g');
             var regMatchSameClass = RegExp('(^|\\,)([^\\{\\,]*' + encodedSelector + '(\\[[^\\]]*\\]|\\:[^\\:][^\\,\\{]*|[\\#\\.][^\\,\\{]*)*)\\s*[\\,\\{]','g');
 
-            var intLine = this.getLine(strAllStyles, regMatchWholeBlock.lastIndex);
+
 
             var arrMatch = null;
 
             while(arrMatch = regMatchWholeBlock.exec(strAllStyles)){            
                 var strMatch = arrMatch[0];               
+                var intLine = this.getLine(strAllStyles, regMatchWholeBlock.lastIndex);
                 obj = this.filterCombinedClassesToSingleLine(obj, strClass, strMatch, intLine, regMatchSameClass);
             }
         }

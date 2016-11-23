@@ -14,29 +14,33 @@ StyleBlocksFilter.prototype = {
         var arrClasses = strClasses.split(' ');        
         for(var i=0, intLen = arrClasses.length; i < intLen; ++i){
             var strClass = arrClasses[i];
-            objStylesFiltered['.' + strClass] = [];
-            objStylesFiltered = this.filterOutParents(strClass, objStyles, objElem, objStylesFiltered);
+
+            if(strClass){
+//console.log('strClass = ', strClass);
+                objStylesFiltered['.' + strClass] = [];
+                objStylesFiltered = this.filterOutParents(strClass, objStyles, objElem, objStylesFiltered);
+            }
         }
 
 
-console.log('#########################################');       
-console.log('objElem = ', objElem);
-console.log('elem = ', objElem.elem);
-console.log('strClasses= ', strClasses);    
+//console.log('#########################################');       
+//console.log('objElem = ', objElem);
+//console.log('elem = ', objElem.elem);
+//console.log('strClasses= ', strClasses);    
 
 //console.log('strAllStyles = ', strAllStyles); 
 //console.log('objStyles = ');
 //console.dir(objStyles);
 
-console.log('objStylesFiltered = ',  objStylesFiltered);
+//console.log('objStylesFiltered = ',  objStylesFiltered);
 
         return objStylesFiltered;
     },
     filterOutParents:function(strClass, objStyles, objElem, objStylesFiltered){
         var arrStyles = objStyles['.' + strClass];
 
-console.log('#########################################');  
-console.log('strClass = ', strClass);
+//console.log('#########################################');  
+//console.log('strClass = ', strClass);
 
 
         for(var i = 0, intLen = arrStyles.length; i < intLen; ++i){

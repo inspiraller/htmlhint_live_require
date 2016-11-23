@@ -127,11 +127,13 @@
 
     /* 1 class separator */
     #grandDaddy .theClass1{
+        margin:20px;
         font-size:1px;
     }
 
     /* 1 class separator by different class */
     #grandDaddy .theClass2{
+        margin:30px;
         font-size:2px;
     }
 
@@ -164,12 +166,14 @@
         font-size:6px;
     }
 
+    
     /* combinator - attached - ancestor class */
     #grandDaddy.grandDaddyClass_A .theClass2,
     .theClass1{
         font-size:7px;
     }
 
+    /* the wrong class*/
     /* many commas*/
     .somethingElse .whatever,
     .somethingElse .somethin.theClass23,
@@ -180,6 +184,7 @@
     }
 
 
+    /* the wrong class*/
     /* square brackets*/
     .somethingElse .whatever[somethingelse],
     .something .theClass2[something]{
