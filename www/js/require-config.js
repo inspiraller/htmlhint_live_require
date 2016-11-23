@@ -39,6 +39,9 @@ var fnRequireConfig = function(){
             'createHtmlAsJson': {
                 exports: 'createHtmlAsJson'
             },
+            'styleBlocksFilter': {
+                exports: 'styleBlocksFilter'
+            },
             'reportMultipleClassesWithSameProps':{
                 exports:'reportMultipleClassesWithSameProps'
             }        

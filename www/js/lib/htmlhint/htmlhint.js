@@ -4,7 +4,7 @@
  * MIT Licensed
  */
 
-// depends on : styleBlocks.js, wrapTagPointers.js, createHtmlAsJson.js, reportMultipleClassesWithSameProps.js
+// depends on : styleBlocks.js, wrapTagPointers.js, createHtmlAsJson.js, reportMultipleClassesWithSameProps.js, styleBlocksFilter.js
 
 var HTMLHint = (function (undefined) {
 
@@ -712,6 +712,8 @@ HTMLHint.addRule({
                 var html = event.html;
 
                 var objReport = reportMultipleClassesWithSameProps(html, strAllStyles);
+
+console.log('htmlhint.js - objReport = ', objReport);
 
 // TODO - reporter.error("you have multiple classes that set the same property", objReport.line, 0, self, event.raw);
 
