@@ -41,7 +41,7 @@ var createHtmlAsJson = function(html, strMarkerHandle){
         var attr = arrMatch[4] || false;
 
         obj.elem = elem;
-        obj.line = intElemLineNum;
+        obj.line = intElemLineNum + 1;
         
         //obj.isSelfClosing = isSelfClosing;                                     
         
