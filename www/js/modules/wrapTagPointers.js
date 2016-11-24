@@ -1,6 +1,6 @@
 
 var trace = function(x){
-    console.log(x);
+    //console.log(x); - removed for IDE's
 }
 
 var wrapTagPointers = function(str, markers){

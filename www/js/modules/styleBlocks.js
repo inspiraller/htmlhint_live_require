@@ -15,10 +15,11 @@ StyleBlocks.prototype = {
         if(arrClasses.length > 1){
             obj = this.findClassesInStyles(strAllStyles, arrClasses, obj);           
         }
- 
+ console.log('objStyles = ', obj);
         return obj;
     },
     findClassesInStyles : function(strAllStyles, arrClasses, obj){
+     
         for(var i = 1, intLen = arrClasses.length; i < intLen; ++i){
 
 
@@ -28,7 +29,7 @@ StyleBlocks.prototype = {
             obj[strClass] = [];
            
 
-            var regMatchWholeBlock = RegExp('(^|\\n)[^\\{\\}]*' + encodedSelector + '\\s*[\\,\\{\\.\\#\\:\\[][^\\}]*\\}','g');
+            var regMatchWholeBlock = RegExp('(^|\\n|\\})[^\\{\\}\\n]*' + encodedSelector + '\\s*[\\,\\{\\.\\#\\:\\[][^\\}]*\\}','g');
             var regMatchSameClass = RegExp('(^|\\,)([^\\{\\,]*' + encodedSelector + '(\\[[^\\]]*\\]|\\:[^\\:][^\\,\\{]*|[\\#\\.][^\\,\\{]*)*)\\s*[\\,\\{]','g');
 
 
@@ -37,21 +38,27 @@ StyleBlocks.prototype = {
 
             while(arrMatch = regMatchWholeBlock.exec(strAllStyles)){            
                 var strMatch = arrMatch[0];               
-                var intLine = this.getLine(strAllStyles, regMatchWholeBlock.lastIndex);
+                var intLine = this.getLine(strAllStyles, regMatchWholeBlock.lastIndex);              
                 obj = this.filterCombinedClassesToSingleLine(obj, strClass, strMatch, intLine, regMatchSameClass);
+
             }
+
+
         }
         return obj;
     },
     filterCombinedClassesToSingleLine : function(obj, strClass, strMatch,  intLine, regMatchSameClass){
         // replace all other commas..
-        var strReplaceComments = this.replaceComments(strMatch);
+        var strNoContentInComments = this.replaceContentInComments(strMatch);
         var strCssProps = strMatch.replace(/^[^\{]*/,'');
         var arrMatchSameClass;
         var props = this.getProps(strCssProps);
 
-        while(arrMatchSameClass = regMatchSameClass.exec(strReplaceComments)){
-            var strEach = arrMatchSameClass[2].replace(/^\s*/,'');
+        while(arrMatchSameClass = regMatchSameClass.exec(strNoContentInComments)){
+            var strEach = arrMatchSameClass[2];
+          
+            strEach = strEach.replace(/^\s*\}?\s*/,'');
+
             var strFiltered = strEach + strCssProps;          
 
             obj[strClass].push({
@@ -82,13 +89,15 @@ StyleBlocks.prototype = {
     },
     getLine : function(styles, intPos){
         var arrMatch = styles.substring(0, intPos).match(/\n/g);
-        return (arrMatch && arrMatch.length)?arrMatch.length - 1:0;
+        return (arrMatch && arrMatch.length)?arrMatch.length:0;
     },
-    replaceComments : function(style){
+    replaceContentInComments : function(style){
         style = style.replace(/\*\//g,'¬');   
 
-        // TODO: line number will be wrong if removing \n
-        style = style.replace(/\/\*[^\¬]*\¬/g,'');
+        style = style.replace(/\/\*([^\¬]*)\¬/g,function($0, $1){
+            var strCommentKeepNewLines = $1.replace(/[^\n]*/g,'');
+            return '/' + '*' + strCommentKeepNewLines + '*' + '/';
+        });
         return style;
     }    
 }

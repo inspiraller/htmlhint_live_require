@@ -9,6 +9,7 @@ ReportMultipleClassesWithSameProps.prototype = {
         var arrHtmlJson = this.getHtmlAsJson(html);
         var arrReport = this.recurseJson(arrHtmlJson, html, strAllStyles);
 
+console.log('arrReport = ', arrReport);
         return arrReport;
     },  
     getHtmlAsJson : function(html){
@@ -24,17 +25,21 @@ ReportMultipleClassesWithSameProps.prototype = {
 
         var strWrapped = wrapTagPointers(html, markers);
         
+
+        if(strWrapped){
     //console.log('######################################################################################################');
     //console.log('wrapped = ',strWrapped);
 
-        var arrHtmlJson = createHtmlAsJson(strWrapped, markers.strMarkerHandle);
+            var arrHtmlJson = createHtmlAsJson(strWrapped, markers.strMarkerHandle);
+            return arrHtmlJson;
+        }
 
     //console.log('######################################################################################################');
     //console.log('arrHtmlJson =');
     //console.dir(arrHtmlJson);
 
 
-        return arrHtmlJson;
+        return [];
     },
 
     recurseJson:function(arrHtmlJson, html, strAllStyles){//, arrReport
