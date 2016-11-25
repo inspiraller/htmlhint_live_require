@@ -54,7 +54,7 @@ define([
             'attr-lowercase': true,
             'attr-value-double-quotes': true,
             'doctype-first': true,
-            'steves-rule-capture-all':!0,
+            'multiple-classes-same-property':true,
             'tag-pair': true,
             'spec-char-escape': true,
             'id-unique': true,

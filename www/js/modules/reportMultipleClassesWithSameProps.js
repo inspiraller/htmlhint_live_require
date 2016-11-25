@@ -91,12 +91,13 @@ console.log('arrReport = ', arrReport);
 
         var objStylesFiltered = styleBlocksFilter(strClasses, objElem, objStyles);
 
-        var arrMatchingSelectors = this.compareProps(objStylesFiltered);
 
-        if(arrMatchingSelectors.length > 0){
+        var objMatching = this.compareProps(objStylesFiltered);
+        var isMatching = (Object.keys(objMatching.properties).length > 0 )? true : false;        
+        if(isMatching){
             arrReport.push({
                 elem:objElem,
-                matchingSelectors:arrMatchingSelectors
+                matching:objMatching
             })
         }
 
@@ -107,21 +108,23 @@ console.log('arrReport = ', arrReport);
     },
     compareProps:function(objStylesFiltered){
         var isMultipleClasses = Object.keys(objStylesFiltered).length > 1;
-        var arrStylesMatching = [];
+
+        var objMatchingSelectors = {};
+        var objMatchingProperties = {};
 
         if(isMultipleClasses){
             var arrAllProps = [];
 
             var strTheClass, i, p;
+
             for(strTheClass in objStylesFiltered){
                 var arrClass = objStylesFiltered[strTheClass];                
                 var strThisClassAllProps = '';
 
                 for(i = 0, intLen = arrClass.length; i < intLen; ++i){
                     var objClass = arrClass[i];
-                    var objClassProps = objClass.props;
+                    var objClassProps = objClass.props;                                
                     
-
                     for(p in objClassProps){
                         var prop = p;
                         var val = objClassProps[p];
@@ -134,12 +137,22 @@ console.log('arrReport = ', arrReport);
                         var objPropInOtherSelector =  arrAllPropsFiltered[0] || null;
 
                         if(objPropInOtherSelector && strThisClassAllProps.indexOf(',' + prop + ',') === -1){
+                                                                                                                
+                            if(!objMatchingProperties[prop]){
 
-                            var obj = Object.assign({
-                                matchesOtherProps:objPropInOtherSelector
-                            }, objClass);
+                                var objOtherMatch = objPropInOtherSelector[prop];
+                                var strOtherSelector = objOtherMatch.selector;
 
-                            arrStylesMatching.push(obj);
+                                objMatchingSelectors[strOtherSelector] = objOtherMatch;
+
+                                objMatchingProperties[prop] = [];                                  
+                                objMatchingProperties[prop].push(objOtherMatch);
+                            }
+
+                            objMatchingSelectors[strTheClass] = objClass;
+                            objMatchingProperties[prop].push(objClass); 
+
+                           
                         }else{
                             strThisClassAllProps+=',' + prop + ',';    
                         }
@@ -151,8 +164,11 @@ console.log('arrReport = ', arrReport);
                     }
                 }
             }
-        }        
-        return arrStylesMatching;
+        }             
+        return {
+            properties:objMatchingProperties,
+            selectors:objMatchingSelectors
+        }
 
     },
     matchFuzzyPropNames:function(prop){

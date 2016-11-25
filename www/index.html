@@ -124,7 +124,7 @@
 <textarea id="editor" name="editor">
  
  &lt;body&gt;
-   &lt;div  class="elem1 elem2"&gt;
+   &lt;div  class="elem1 elem2 elem3"&gt;
 
         &lt;h1 style="margin-top: 0;"&gt;Local Server Started&lt;/h1&gt;
         &lt;p&gt;To access front-end development files &lt;a href="./ui/app/"&gt;click here&lt;/a&gt;.&lt;/p&gt;
@@ -137,105 +137,9 @@
 <textarea id="styles">
 
 
-    /* 1 class separator */
-    #grandDaddy .theClass1{
-        margin:20px;
-        font-size:1px;
-    }
-
-    /* 1 class separator by different class */
-    #grandDaddy .theClass2{
-        margin:30px;
-        font-size:2px;
-    }
-
-
-    /* parent sibling separator */
-    .parentDeep2_1_A + .parentDeep2_2_B .theClass2{
-        font-size:3px;
-    }
-
-    /* sibling separator */
-    #someSibling + .theClass2{
-        font-size:3px;
-    }
-
-    /* many ancestor separator  */
-    .grandDaddyClass_A .parentDeep1 .parentDeep2_2_A .theClass1{
-        font-size:4px;
-    }
-
-    /* combinator - single class */
-    .parentDeep1,
-    .theClass1,
-    #grandDaddy{
-        font-size:5px;
-    }
-
-    /* combinator - sibling class */
-    #someSibling + .theClass2,
-    .theClass1{
-        font-size:6px;
-    }
-
-    
-    /* combinator - attached - ancestor class */
-    #grandDaddy.grandDaddyClass_A .theClass2,
-    .theClass1{
-        font-size:7px;
-    }
-
-    /* the wrong class*/
-    /* many commas*/
-    .somethingElse .whatever,
-    .somethingElse .somethin.theClass23,
-    .somethingElse .something.2theClass2.theClass2,
-    .theClass23,
-    .something .theClass2{
-        font-size:8px;
-    }
-
-
-    /* the wrong class*/
-    /* square brackets*/
-    .somethingElse .whatever[somethingelse],
-    .something .theClass2[something]{
-        font-size:8px;
-    }
-
-
-    /* the wrong class*/
-    /* combined on end*/
-    .whatever,
-    .something .theClass2.somethingElse#somethingElse,
-    .whatever2{
-        font-size:8px;
-    }
-
-    /* the wrong class */
-    /* psuedo */
-    .something .theClass2:first-child.somethingElse{
-        font-size:8px;
-    }
-
-
-    /* the wrong class */
-    /* 0 difficult preceeding selector class */
-    .global .someParentWrapper::something[yo][harnessing  ][   'something']:something > .theClass1{
-        font-size:1px;
-    }
-
-    /* the wrong class */
-    .theClass12{
-        background:red;
-    }
-    /* the wrong class */
-    .theClass12,    
-    .ttheClass1{
-        background:blue;
-    }
-
-    .elem1{font-size:20px;}.elem2{font-size:30px;}
+    .elem1{font-size:20px; margin:20px;}
+    .elem2{font-size:30px; margin:40px; border:2px;}
+    .elem3{font-size:30px; margin:40px; border:2px;}
 
 
 

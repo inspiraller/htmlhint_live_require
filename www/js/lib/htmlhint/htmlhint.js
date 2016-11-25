@@ -659,9 +659,17 @@ HTMLHint.addRule({
 });
 
 HTMLHint.addRule({
-    id: "steves-rule-capture-all",
-    description: "Test to capture the whole html on any change",
-    init: function stevesMethod(parser, reporter) {
+    id: 'multiple-classes-same-property',
+    description: 'Prevent classes with the same properties',
+    init: function multipleClases(parser, reporter, options) {
+
+/*
+var reporter = {
+    error:function(str, intLine){
+        console.log(str);
+    }
+}*/
+
         var self = this;
         var strAllStyles = $('#styles').val();
 
@@ -675,26 +683,12 @@ HTMLHint.addRule({
                 for(var i=0, intLen = arrReport.length; i < intLen; ++i){
                     var objReport = arrReport[i];
                     var objElem = objReport.elem;
-                    var strSelectors = '';
-                    var arrSelectors = objReport.matchingSelectors;
-                    for(var m = 0, intLenM = arrSelectors.length; m < intLenM; ++m){
-                        var objSelector = arrSelectors[m];
+                    var objMatchingSelectors = Object.keys(objReport.matching.selectors);
+                    var strSelectors = objMatchingSelectors.join(',');
+                    var objMatchingProperties = Object.keys(objReport.matching.properties);
+                    var strProperties = objMatchingProperties.join(',');
 
-                        strSelectors += '\n'; 
-
-                        var block = objSelector.block;
-                        var objMatchesOtherProps = objSelector.matchesOtherProps; 
-                        var arrProp = Object.keys(objMatchesOtherProps);
-                        var strProp = arrProp[0];
-                        strSelectors += '\n';                        
-                        strSelectors +=  block.substring(0, block.indexOf('{') +1) + ' ' + strProp + ': }';
-
-                        strSelectors += '\n';  
-                        var objOtherProp = objMatchesOtherProps[strProp];
-                        var objOtherPropBlock = objOtherProp.block;
-                        strSelectors +=  objOtherPropBlock.substring(0, objOtherPropBlock.indexOf('{') +1) + ' ' + strProp + ': }';                        
-                    }
-                    var strReport = "This element has multiple classes with the same properties." + strSelectors;
+                    var strReport = "Multiple selectors exist with same properties. selectors = " + strSelectors + '. Properties = ' + strProperties ;
                     reporter.error(strReport, objElem.line, 0, self, event.raw);                    
                 }
 
@@ -1016,31 +1010,7 @@ HTMLHint.addRule({
         });
     }
 });
-HTMLHint.addRule({
-    id: 'multiple-classes-same-property',
-    description: 'Prevent classed with the same properties',
-    init: function(parser, reporter, options){
-        var self = this;
 
-        parser.addListener('tagstart', function(event){
-            var attrs = event.attrs;
-            var attr;
-            var col = event.col + event.tagName.length + 1;
-
-            for(var i=0, l=attrs.length;i<l;i++){
-                attr = attrs[i];
-                if(attr.name === 'class'){
-                    var strVal = attr.value;
-                    var isMultipleclass = (strVal.search(/\S\s+\S/)!==-1);
-                    if(isMultipleclass){
-                        reporter.warn('you have used multiple classnames. options = ' + options, event.line, col + attr.index, self, attr.raw);                   
-                        break;
-                    }
-                }
-            }
-        });
-    }
-});
 /**
  * Copyright (c) 2014, Yanis Wang <yanis.wang@gmail.com>
  * MIT Licensed

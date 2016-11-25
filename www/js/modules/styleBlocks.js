@@ -29,7 +29,7 @@ StyleBlocks.prototype = {
             obj[strClass] = [];
            
 
-            var regMatchWholeBlock = RegExp('(^|\\n|\\})[^\\{\\}\\n]*' + encodedSelector + '\\s*[\\,\\{\\.\\#\\:\\[][^\\}]*\\}','g');
+            var regMatchWholeBlock = RegExp('(^|\\n|\\}) *([^\\{\\}\\n]*' + encodedSelector + '\\s*[\\,\\{\\.\\#\\:\\[][^\\}]*\\})','g');
             var regMatchSameClass = RegExp('(^|\\,)([^\\{\\,]*' + encodedSelector + '(\\[[^\\]]*\\]|\\:[^\\:][^\\,\\{]*|[\\#\\.][^\\,\\{]*)*)\\s*[\\,\\{]','g');
 
 
@@ -37,7 +37,7 @@ StyleBlocks.prototype = {
             var arrMatch = null;
 
             while(arrMatch = regMatchWholeBlock.exec(strAllStyles)){            
-                var strMatch = arrMatch[0];               
+                var strMatch = arrMatch[2];               
                 var intLine = this.getLine(strAllStyles, regMatchWholeBlock.lastIndex);              
                 obj = this.filterCombinedClassesToSingleLine(obj, strClass, strMatch, intLine, regMatchSameClass);
 
@@ -56,17 +56,18 @@ StyleBlocks.prototype = {
 
         while(arrMatchSameClass = regMatchSameClass.exec(strNoContentInComments)){
             var strEach = arrMatchSameClass[2];
-          
+            
             strEach = strEach.replace(/^\s*\}?\s*/,'');
 
-            var strFiltered = strEach + strCssProps;          
+            var strFiltered = strEach + strCssProps;
 
             obj[strClass].push({
+                selector:strClass,
                 line:intLine,
-                block:strFiltered,                    
+                block:strFiltered,
                 all:strMatch,
                 props:props
-            }); 
+            });
         }
         return obj;
     },
