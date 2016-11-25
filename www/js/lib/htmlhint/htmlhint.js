@@ -658,20 +658,35 @@ HTMLHint.addRule({
     }
 });
 
+
+
+// RESTORE FOR BUILD
+//var fs = require('fs');
+
 HTMLHint.addRule({
     id: 'multiple-classes-same-property',
     description: 'Prevent classes with the same properties',
     init: function multipleClases(parser, reporter, options) {
 
-/*
-var reporter = {
-    error:function(str, intLine){
-        console.log(str);
-    }
-}*/
-
         var self = this;
+
+        // REMOVE FOR BUILD
+        
+        var reporter = {
+            error:function(str, intLine){
+                console.log(str);
+            }
+
+
+        }
+        // REMOVE FOR BUILD
         var strAllStyles = $('#styles').val();
+
+        // RESTORE FOR BUILD
+        //var strPathToBundledCss = options;
+        // example styles
+        //var strAllStyles = '.classX{ background:red;}';        
+        //strAllStyles = fs.readFileSync(strPathToBundledCss, "utf8");        
 
         var allEvent = function(event) {
             if(event.type == 'start'){
@@ -697,7 +712,7 @@ var reporter = {
         };
         parser.addListener("start", allEvent);
     }
-}),
+});
 
 /**
  * Copyright (c) 2015, Yanis Wang <yanis.wang@gmail.com>

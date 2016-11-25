@@ -9,7 +9,7 @@ ReportMultipleClassesWithSameProps.prototype = {
         var arrHtmlJson = this.getHtmlAsJson(html);
         var arrReport = this.recurseJson(arrHtmlJson, html, strAllStyles);
 
-console.log('arrReport = ', arrReport);
+//console.log('arrReport = ', arrReport);
         return arrReport;
     },  
     getHtmlAsJson : function(html){

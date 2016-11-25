@@ -15,7 +15,7 @@ StyleBlocks.prototype = {
         if(arrClasses.length > 1){
             obj = this.findClassesInStyles(strAllStyles, arrClasses, obj);           
         }
- console.log('objStyles = ', obj);
+ //console.log('objStyles = ', obj);
         return obj;
     },
     findClassesInStyles : function(strAllStyles, arrClasses, obj){
