@@ -18,6 +18,7 @@ StyleBlocksFilter.prototype = {
             if(strClass){
 //console.log('strClass = ', strClass);
                 objStylesFiltered['.' + strClass] = [];
+
                 objStylesFiltered = this.filterOutParents(strClass, objStyles, objElem, objStylesFiltered);
             }
         }
@@ -87,7 +88,7 @@ StyleBlocksFilter.prototype = {
             return false;
         }
 
-        var hasGenericParentClassOrId = this.hasGenericParentClassOrId(block, strSelector, objElem);
+        var isMatch = this.matchSelectorsOnParent(block, strSelector, objElem);
 
         // TOD
         // hasDirectParent
@@ -97,13 +98,11 @@ StyleBlocksFilter.prototype = {
         // hasSquare
         // hasPseudo
 
-
-        return hasGenericParentClassOrId;
+        return isMatch;
     },
 
     /*********************************************************************************************/
-    /* hasGenericParentClassOrId() - Generic, meaning non direct parent */
-    hasGenericParentClassOrId:function(block, strSelector, objElem){
+    matchSelectorsOnParent:function(block, strSelector, objElem){
         var objAdjoined = this.getAdjoined(strSelector);
 
 
@@ -202,21 +201,49 @@ console.log('isSelectors = ', isSelectors);
             }
 
             // get elem
-            var arrElem = strSelector.match(/^\s*[^\.\#\s\>\+\~\[\(\:]+/);
+            var arrElem = strSelector.match(/^\s*([^\.\#\s\>\+\~\[\(\:]+)/);
             if(arrElem && arrElem.length){
-                objAdjoined.strElem = arrElem[0];
+                objAdjoined.strElem = arrElem[1];
             }
 
         }
         return objAdjoined;
     }, 
     matchAdjoinedOnParent:function(objElem, objAdjoined){
-        // TODO
+
+        // test if elem
+        var strElem = objAdjoined.strElem;
+        if(strElem!=='' && objElem.elem !== strElem){
+            return false;
+        }
+        var attr = objElem.attr;
+
+        // test if id
+        var strId = objAdjoined.strId;
+        if(strId!=='' && attr.id !== strId.substr(1)){
+            return false;
+        }
+
+        var arrClasses = objAdjoined.arrClasses;
+        if(arrClasses && arrClasses.length){
+            for(var i=0, intLen = arrClasses.length; i < intLen; ++i){
+                var strClass = arrClasses[i];
+                var reg = RegExp('(^|\\s)' + strClass.substr(1) + '(\\s|$)');
+                if(attr.class.search(reg) === -1){
+                    return false;
+                }                
+            }
+        }
+
         return true;
     },
     removeLastAjoiningSelectorsFromBlock:function(block){
-        //TODO
-        return '';
+        var intIndexSpaceInBrackets = block.search(/([\(\[]|$)/);
+        block = block.substring(0, intIndexSpaceInBrackets);
+        var reg = /[^\s\[\]\(\)\:]+(\:+[^\s\:]+|\[[^\[\]]*\]|\([^\(\)]*\))*(\s*(\+|~|>))?\s*$/i;
+        block = block.replace(regPreceedingSelector,'');
+        block = block.replace(/\s*$/,'');
+        return block;
     },
     filterParentsByClass:function(objElem, block, strSelector, arrClasses){
         if(arrClasses.length){
