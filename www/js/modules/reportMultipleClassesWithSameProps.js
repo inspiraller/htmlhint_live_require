@@ -1,17 +1,20 @@
-var reportMultipleClassesWithSameProps  = function(arrHtmlJson, html){
+var reportMultipleClassesWithSameProps  = function(arrHtmlJson, html, regExclude){
     var inst = new ReportMultipleClassesWithSameProps();
-    return inst.init(arrHtmlJson, html);
+    return inst.init(arrHtmlJson, html, regExclude);
 }
 var ReportMultipleClassesWithSameProps = function(){}
 ReportMultipleClassesWithSameProps.prototype = {
-    init:function(html, strAllStyles){
+    init:function(html, strAllStyles, regExclude){
 
         var arrHtmlJson = this.getHtmlAsJson(html);
-        var arrReport = this.recurseJson(arrHtmlJson, html, strAllStyles);
+  
+
+        var arrReport = this.recurseJson(arrHtmlJson, html, strAllStyles, regExclude);
 
 //console.log('arrReport = ', arrReport);
         return arrReport;
     },  
+
     getHtmlAsJson : function(html){
         // remove everything outside body
         //html = html.replace(/^[\w\W]*(<body(\s[^<>]*>|>)[\w\W]*<\/body\s*>)[\w\W]*$/gi,'$1');
@@ -42,8 +45,8 @@ ReportMultipleClassesWithSameProps.prototype = {
         return [];
     },
 
-    recurseJson:function(arrHtmlJson, html, strAllStyles){//, arrReport
-        var arrReport = (arguments.length > 3)?arguments[3]:[];
+    recurseJson:function(arrHtmlJson, html, strAllStyles, regExclude){//, arrReport
+        var arrReport = (arguments.length > 4)?arguments[4]:[];
         
         for(var i = 0, intLen = arrHtmlJson.length; i < intLen; ++i){
             var objElem = arrHtmlJson[i];
@@ -57,16 +60,16 @@ ReportMultipleClassesWithSameProps.prototype = {
             if(strClasses){
                 var isMultipleClasses = strClasses.split(' ').length > 1;
                 if(isMultipleClasses){
-                    arrReport = this.filterOutNonParents(strAllStyles, strClasses, objElem, arrReport);
+                    arrReport = this.filterOutNonParents(strAllStyles, strClasses, objElem, regExclude, arrReport);
                 }
             }
             if(objElem.children){
-                arrReport = this.recurseJson(objElem.children, html, strAllStyles, arrReport);
+                arrReport = this.recurseJson(objElem.children, html, strAllStyles, regExclude, arrReport);
             }
         }
         return arrReport;
     },
-    filterOutNonParents:function(strAllStyles, strClasses, objElem, arrReport){   
+    filterOutNonParents:function(strAllStyles, strClasses, objElem, regExclude, arrReport){   
 
 
 // TO REMOVE - 
@@ -86,6 +89,9 @@ ReportMultipleClassesWithSameProps.prototype = {
                 // once you have an array of all remaining classes - compare the properties, and if any are shared, provide error message.
         
         strClassesCombined = strClasses.replace(/(^|\s+)/g,'.');
+
+
+        strClassesCombined = strClassesCombined.replace(regExclude, '');
 
         var objStyles = styleBlocks(strAllStyles, strClassesCombined);
 

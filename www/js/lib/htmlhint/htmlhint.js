@@ -693,7 +693,7 @@ HTMLHint.addRule({
 
                 var html = event.html;
 
-                var arrReport = reportMultipleClassesWithSameProps(html, strAllStyles);
+                var arrReport = reportMultipleClassesWithSameProps(html, strAllStyles, /(\.gr\-1|\.gr\-2)/);
 
                 for(var i=0, intLen = arrReport.length; i < intLen; ++i){
                     var objReport = arrReport[i];
