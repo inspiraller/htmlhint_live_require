@@ -46,7 +46,12 @@ StyleBlocksFilter.prototype = {
         for(var i = 0, intLen = arrStyles.length; i < intLen; ++i){
             var objEachStyle = arrStyles[i];
             var block = objEachStyle.block;
-            block = this.removeClassFromEndOfBlock(block, strClass);
+
+
+            //block = this.removeClassFromEndOfBlock(block, strClass);
+            block = this.removeProps(block);
+            block = this.removeLastAjoiningSelectorsFromBlock(block);
+
             var strPrecedingSelector = this.getPreceedingSelector(block);        
             var isParent = this.recurseParentsToMatchPreceedingSelectors(block, strPrecedingSelector, objElem.parent);
 //console.log('isParent = ', isParent);            
@@ -62,9 +67,7 @@ StyleBlocksFilter.prototype = {
     removeClassFromEndOfBlock:function(block, strClass){
         return block.substring(0, block.lastIndexOf('.' + strClass));
     },
-    removeIdFromEndOfBlock:function(block, strId){
-        return block.substring(0, block.lastIndexOf(strId));
-    },    
+   
     getPreceedingSelector : function(block){
         var regPreceedingSelector = /[^\s\[\]\(\)\:]+(\:+[^\s\:]+|\[[^\[\]]*\]|\([^\(\)]*\))*(\s*(\+|~|>))?\s*$/i;
         // 
@@ -114,8 +117,9 @@ StyleBlocksFilter.prototype = {
             var isParentMatchAdjoined = this.matchAdjoinedOnParent(objElem, objAdjoined);     
 
 
-            if(isParentMatchAdjoined){
+            if(isParentMatchAdjoined){                
                 var block = this.removeLastAjoiningSelectorsFromBlock(block);
+
                 var strPrevPrecedingSelector = this.getPreceedingSelector(block);
                 return this.recurseParentsToMatchPreceedingSelectors(block, strPrevPrecedingSelector, objElem.parent);       
             }else{
@@ -196,7 +200,11 @@ StyleBlocksFilter.prototype = {
 
         return true;
     },
+    removeProps:function(block){
+       return block.replace(/\{[^\{\}]*\}\s*$/,'');
+    },
     removeLastAjoiningSelectorsFromBlock:function(block){
+
         var intIndexSpaceInBrackets = block.search(/([\(\[]|$)/);
 
         block = block.substring(0, intIndexSpaceInBrackets);
@@ -207,52 +215,5 @@ StyleBlocksFilter.prototype = {
         block = block.replace(/\s*$/,'');
 
         return block;
-    },
-    filterParentsByClass:function(objElem, block, strSelector, arrClasses){
-        if(arrClasses.length){
-            for(var i = 0, intLen = arrClasses.length; i < intLen; ++i){
-                var strClass = arrClasses[i];     
-                var attr = objElem.attr;           
-                if(!attr){
-                    return false;
-                }
-                var isClassExistInHtml = this.matchInHtml(attr.class, strClass.substr(1));
-
-                if(isClassExistInHtml){      
-
-                    block = this.removeClassFromEndOfBlock(block, strClass);
-                    var strPrevPrecedingSelector = this.getPreceedingSelector(block);
-                
-                    return this.recurseParentsToMatchPreceedingSelectors(block, strPrevPrecedingSelector, objElem.parent);
-                }else{
-                    return this.recurseParentsToMatchPreceedingSelectors(block, strSelector, objElem.parent);
-                }
-            }
-        }
-        return false;
-    },
-    filterParentsById:function(objElem, block, strSelector, strId){
-        if(strId!==''){           
-            var attr = objElem.attr;
-            if(!attr){
-                return false;
-            }
-            var isIdExistInHtml = this.matchInHtml(attr.id, strId.substr(1));
-            if(isIdExistInHtml){      
-                block = this.removeIdFromEndOfBlock(block, strId);
-                var strPrevPrecedingSelector = this.getPreceedingSelector(block);
-            
-                return this.recurseParentsToMatchPreceedingSelectors(block, strPrevPrecedingSelector, objElem.parent);
-            }else{
-                return this.recurseParentsToMatchPreceedingSelectors(block, strSelector, objElem.parent);
-            }
-           
-        }   
-        return false;      
-    },
-    matchInHtml:function(strAll, strSelector){     
-        if(!strAll){ return false;}
-        var regHasSelector = RegExp('(^|\\s)' +strSelector + '(\\s|$)');
-        return (strAll.search(regHasSelector)!==-1)?true:false;  
     }
 };
