@@ -49,7 +49,7 @@ StyleBlocksFilter.prototype = {
             block = this.removeClassFromEndOfBlock(block, strClass);
             var strPrecedingSelector = this.getPreceedingSelector(block);        
             var isParent = this.recurseParentsToMatchPreceedingSelectors(block, strPrecedingSelector, objElem.parent);
-            
+//console.log('isParent = ', isParent);            
             if(isParent){
                 objStylesFiltered['.' + strClass].push(objEachStyle);
             }       
@@ -76,9 +76,9 @@ StyleBlocksFilter.prototype = {
     recurseParentsToMatchPreceedingSelectors:function(block, strSelector, objElem){
 
 //console.log('___________________________________________________________');
-//console.log('block = ', block)
+////console.log('block = ', block)
 //console.log('strSelector="' +  strSelector + '"');
-//console.log('objElem = ', objElem);
+//console.log('objElem.parent= ', objElem);
 
 
         if(!strSelector){          
@@ -104,7 +104,6 @@ StyleBlocksFilter.prototype = {
     matchSelectorsOnParent:function(block, strSelector, objElem){
         var objAdjoined = this.getAdjoined(strSelector);
 
-
         var arrClasses = objAdjoined.arrClasses;
         var strId = objAdjoined.strId;
         var strElem = objAdjoined.strElem;
@@ -116,8 +115,8 @@ StyleBlocksFilter.prototype = {
 
 
             if(isParentMatchAdjoined){
-
-                var strPrevPrecedingSelector = this.removeLastAjoiningSelectorsFromBlock(block);
+                var block = this.removeLastAjoiningSelectorsFromBlock(block);
+                var strPrevPrecedingSelector = this.getPreceedingSelector(block);
                 return this.recurseParentsToMatchPreceedingSelectors(block, strPrevPrecedingSelector, objElem.parent);       
             }else{
                 return this.recurseParentsToMatchPreceedingSelectors(block, strSelector, objElem.parent);
@@ -169,12 +168,10 @@ StyleBlocksFilter.prototype = {
     }, 
     matchAdjoinedOnParent:function(objElem, objAdjoined){
 
-
         // test if elem
         var strElem = objAdjoined.strElem;
-        if(strElem!=='' && objElem.elem !== strElem){
 
-         
+        if(strElem && strElem!=='' && objElem.elem !== strElem){         
             return false;
         }
         var attr = objElem.attr;
@@ -182,7 +179,7 @@ StyleBlocksFilter.prototype = {
         // test if id
         var strId = objAdjoined.strId;
 
-        if(strId!=='' && attr.id !== strId.substr(1)){       
+        if(strId && strId!=='' && attr.id !== strId.substr(1)){       
             return false;
         }
 
@@ -201,10 +198,14 @@ StyleBlocksFilter.prototype = {
     },
     removeLastAjoiningSelectorsFromBlock:function(block){
         var intIndexSpaceInBrackets = block.search(/([\(\[]|$)/);
+
         block = block.substring(0, intIndexSpaceInBrackets);
+        
         var reg = /[^\s\[\]\(\)\:]+(\:+[^\s\:]+|\[[^\[\]]*\]|\([^\(\)]*\))*(\s*(\+|~|>))?\s*$/i;
+
         block = block.replace(reg,'');
         block = block.replace(/\s*$/,'');
+
         return block;
     },
     filterParentsByClass:function(objElem, block, strSelector, arrClasses){
