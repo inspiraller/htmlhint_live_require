@@ -89,9 +89,8 @@ ReportMultipleClassesWithSameProps.prototype = {
                 // once you have an array of all remaining classes - compare the properties, and if any are shared, provide error message.
         
         strClassesCombined = strClasses.replace(/(^|\s+)/g,'.');
-
-
         strClassesCombined = strClassesCombined.replace(regExclude, '');
+        strClasses = strClassesCombined.replace(/\./g,' ');
 
         var objStyles = styleBlocks(strAllStyles, strClassesCombined);
 

@@ -40,25 +40,25 @@ StyleBlocksFilter.prototype = {
     filterOutParents:function(strClass, objStyles, objElem, objStylesFiltered){
         var arrStyles = objStyles['.' + strClass];
 
-//console.log('strClass = ', strClass);
+
+        if(arrStyles){
+            for(var i = 0, intLen = arrStyles.length; i < intLen; ++i){
+                var objEachStyle = arrStyles[i];
+                var block = objEachStyle.block;
 
 
-        for(var i = 0, intLen = arrStyles.length; i < intLen; ++i){
-            var objEachStyle = arrStyles[i];
-            var block = objEachStyle.block;
+                //block = this.removeClassFromEndOfBlock(block, strClass);
+                block = this.removeProps(block);
+                block = this.removeLastAjoiningSelectorsFromBlock(block);
 
+                var strPrecedingSelector = this.getPreceedingSelector(block);        
+                var isParent = this.recurseParentsToMatchPreceedingSelectors(block, strPrecedingSelector, objElem.parent);
+    //console.log('isParent = ', isParent);            
+                if(isParent){
+                    objStylesFiltered['.' + strClass].push(objEachStyle);
+                }       
 
-            //block = this.removeClassFromEndOfBlock(block, strClass);
-            block = this.removeProps(block);
-            block = this.removeLastAjoiningSelectorsFromBlock(block);
-
-            var strPrecedingSelector = this.getPreceedingSelector(block);        
-            var isParent = this.recurseParentsToMatchPreceedingSelectors(block, strPrecedingSelector, objElem.parent);
-//console.log('isParent = ', isParent);            
-            if(isParent){
-                objStylesFiltered['.' + strClass].push(objEachStyle);
-            }       
-
+            }
         }
 
 

@@ -36,15 +36,20 @@ StyleBlocks.prototype = {
 
             var arrMatch = null;
 
-            while(arrMatch = regMatchWholeBlock.exec(strAllStyles)){            
+            while(arrMatch = regMatchWholeBlock.exec(strAllStyles)){          
                 var strMatch = arrMatch[2];               
                 var intLine = this.getLine(strAllStyles, regMatchWholeBlock.lastIndex);              
                 obj = this.filterCombinedClassesToSingleLine(obj, strClass, strMatch, intLine, regMatchSameClass);
 
             }
 
+            if(!obj[strClass].length){
+                delete obj[strClass];
+            }
 
         }
+
+
         return obj;
     },
     filterCombinedClassesToSingleLine : function(obj, strClass, strMatch,  intLine, regMatchSameClass){
