@@ -1,13 +1,13 @@
-var reportMultipleClassesWithSameProps  = function(arrHtmlJson, html, regExclude){
+var reportMultipleClassesWithSameProps  = function(arrHtmlJson, html, regExclude, isExcludeBemModifier){
     var inst = new ReportMultipleClassesWithSameProps();
-    return inst.init(arrHtmlJson, html, regExclude);
+    return inst.init(arrHtmlJson, html, regExclude, isExcludeBemModifier);
 }
 var ReportMultipleClassesWithSameProps = function(){}
 ReportMultipleClassesWithSameProps.prototype = {
-    init:function(html, strAllStyles, regExclude){
+    init:function(html, strAllStyles, regExclude, isExcludeBemModifier){
 
         var arrHtmlJson = this.getHtmlAsJson(html);
-        var arrReport = this.recurseJson(arrHtmlJson, html, strAllStyles, regExclude);
+        var arrReport = this.recurseJson(arrHtmlJson, html, strAllStyles, regExclude, isExcludeBemModifier);
 //console.log('arrReport = ', arrReport);
         return arrReport;
     },  
@@ -34,8 +34,8 @@ ReportMultipleClassesWithSameProps.prototype = {
         return [];
     },
 
-    recurseJson:function(arrHtmlJson, html, strAllStyles, regExclude){//, arrReport
-        var arrReport = (arguments.length > 4)?arguments[4]:[];
+    recurseJson:function(arrHtmlJson, html, strAllStyles, regExclude, isExcludeBemModifier){//, arrReport
+        var arrReport = (arguments.length > 5)?arguments[5]:[];
         
         for(var i = 0, intLen = arrHtmlJson.length; i < intLen; ++i){
             var objElem = arrHtmlJson[i];
@@ -49,16 +49,16 @@ ReportMultipleClassesWithSameProps.prototype = {
             if(strClasses){
                 var isMultipleClasses = strClasses.split(' ').length > 1;
                 if(isMultipleClasses){
-                    arrReport = this.filterOutNonParents(strAllStyles, strClasses, objElem, regExclude, arrReport);
+                    arrReport = this.filterOutNonParents(strAllStyles, strClasses, objElem, regExclude, isExcludeBemModifier, arrReport);
                 }
             }
             if(objElem.children){
-                arrReport = this.recurseJson(objElem.children, html, strAllStyles, regExclude, arrReport);
+                arrReport = this.recurseJson(objElem.children, html, strAllStyles, regExclude, isExcludeBemModifier, arrReport);
             }
         }
         return arrReport;
     },
-    filterOutNonParents:function(strAllStyles, strClasses, objElem, regExclude, arrReport){   
+    filterOutNonParents:function(strAllStyles, strClasses, objElem, regExclude, isExcludeBemModifier, arrReport){   
 
         var strClassesCombined = strClasses.replace(/(^|\s+)/g,'.');
 
@@ -70,7 +70,7 @@ ReportMultipleClassesWithSameProps.prototype = {
         
         var objStyles = styleBlocks(strAllStyles, strClassesCombined);
         var isStyles = (Object.keys(objStyles).length > 0)?true:false;
-        var objStylesFiltered = (isStyles)?styleBlocksFilter(strClasses, objElem, objStyles):{};
+        var objStylesFiltered = (isStyles)?styleBlocksFilter(strClasses, objElem, objStyles, isExcludeBemModifier):{};
 
 //console.log('________________________________________');
 //console.log('objStyles = ', objStyles);    
@@ -154,7 +154,8 @@ ReportMultipleClassesWithSameProps.prototype = {
 
     },
     matchFuzzyPropNames:function(prop){
-        var regFuzzy = /^(margin|padding)\-[\w\W]*$/;
-        return prop.replace(regFuzzy,'$1');
+        return prop;
+        //var regFuzzy = /^(margin|padding)\-[\w\W]*$/;
+        //return prop.replace(regFuzzy,'$1');
     }
 }

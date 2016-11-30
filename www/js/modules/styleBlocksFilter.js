@@ -1,16 +1,16 @@
 
-var styleBlocksFilter = function(strClasses, objElem, objStyles){
+var styleBlocksFilter = function(strClasses, objElem, objStyles, isExcludeBemModifier){
     var inst = new StyleBlocksFilter();
-    return inst.init(strClasses, objElem, objStyles);
+    return inst.init(strClasses, objElem, objStyles, isExcludeBemModifier);
 }
 var StyleBlocksFilter = function(){}
 StyleBlocksFilter.prototype = {
-    init:function(strClasses, objElem, objStyles){
+    init:function(strClasses, objElem, objStyles, isExcludeBemModifier){
         var objStylesFiltered = {};
-        objStylesFiltered = this.filterOnClasses(strClasses, objElem, objStyles, objStylesFiltered);
+        objStylesFiltered = this.filterOnClasses(strClasses, objElem, objStyles, objStylesFiltered, isExcludeBemModifier);
         return objStylesFiltered;
     },
-    filterOnClasses:function(strClasses, objElem, objStyles, objStylesFiltered){
+    filterOnClasses:function(strClasses, objElem, objStyles, objStylesFiltered, isExcludeBemModifier){
         var arrClasses = strClasses.split(' ');        
         for(var i=0, intLen = arrClasses.length; i < intLen; ++i){
             var strClass = arrClasses[i];
@@ -21,7 +21,7 @@ StyleBlocksFilter.prototype = {
 
 
                 objStylesFiltered['.' + strClass] = [];
-                objStylesFiltered = this.filterOutParents(strClass, objStyles, objElem, objStylesFiltered);                
+                objStylesFiltered = this.filterOutParents(strClass, objStyles, objElem, objStylesFiltered, isExcludeBemModifier);                
             }
         }
 
@@ -39,16 +39,20 @@ StyleBlocksFilter.prototype = {
 
         return objStylesFiltered;
     },
-    filterOutParents:function(strClass, objStyles, objElem, objStylesFiltered){
+    filterOutParents:function(strClass, objStyles, objElem, objStylesFiltered, isExcludeBemModifier){
         var arrStyles = objStyles['.' + strClass];
-
 
 
         if(arrStyles){
             for(var i = 0, intLen = arrStyles.length; i < intLen; ++i){
                 var objEachStyle = arrStyles[i];
 
+                var isBemModifier = this.getBemModifier(strClass, objStyles, objEachStyle, isExcludeBemModifier);
 
+                if(isBemModifier){
+                    delete objStylesFiltered['.' + strClass];
+                    return objStylesFiltered;
+                }
                 // We don't need two lots of objStylesFiltered['.' + strClass] to match properties against in reportMultilpleClassesWithSameProps                
                 var isExistingAdjoinedToThis = this.getExistingAdjoinedWith(objStylesFiltered, objEachStyle);
                 if(isExistingAdjoinedToThis){
@@ -75,6 +79,16 @@ StyleBlocksFilter.prototype = {
 
         return objStylesFiltered;
     }, 
+    getBemModifier:function(strClass, objStyles, objEachStyle, isExcludeBemModifier){
+
+        if(isExcludeBemModifier){
+            var regBem  = /^[\.\#\w][^\-\.\#\{\(\[\;\:]*\-\-[^\-]+$/;
+            if(strClass.search(regBem)!==-1){             
+                return true;
+            }            
+        }
+        return false;
+    },
     getExistingAdjoinedWith:function(objStylesFiltered, objEachStyle){
         var arrAdjoinedWith = objEachStyle.arrAdjoinedWith;
             

@@ -660,6 +660,7 @@ HTMLHint.addRule({
 
 
 
+
 // RESTORE FOR BUILD
 //var fs = require('fs');
 
@@ -670,7 +671,7 @@ HTMLHint.addRule({
 
         var self = this;
 
-        // REMOVE FOR BUILD        
+        // REMOVE FOR BUILD            
         var reporter = {
             error:function(str, intLine){
                 console.log(str);
@@ -678,31 +679,82 @@ HTMLHint.addRule({
         }
         var strAllStyles = $('#styles').val();
         var regExcludeClasses =  '(\\.gr\\-1|\\.gr\\-2)+';
+            
+        var getOption = function(options, prop){
+            /*{
+                "tag-pair": true,
+                "multiple-classes-same-property":"strStylesPaths=C:\\projects\\careers\\Cwo.Careers.Web.UI\\ui\\app\\css\\,someOtherPath;regExcludeClasses=(\\.gr\\-1|\\.gr\\-2)+;isExcludeBemModifier=true;"
+            }*/
 
+            var arrMatch = options.match(RegExp('(^|\\;)' + prop + '\\=([^\\;]+)'));
 
-        // RESTORE FOR BUILD
-        
-        /*{
-            "tag-pair": true,
-            "multiple-classes-same-property":"strStylesPaths=C:\\projects\\careers\\Cwo.Careers.Web.UI\\ui\\app\\css\\styles.min.css;regExcludeClasses=(\\.gr\\-1|\\.gr\\-2)+"
-        }*/
-
-        //var arrOptions = options.split(';');
-        //var strStylesPaths = arrOptions[0].substr(arrOptions[0].indexOf('=')+1);      
-        //var regExcludeClasses = (arrOptions.length > 1)? arrOptions[1].substr(arrOptions[1].indexOf('=')+1):null;
+            if(arrMatch && arrMatch.length){
+                return arrMatch[2];
+            }
+            return null;
+        }
+        // example
         //var strAllStyles = '.classX{ background:red;}'; 
 
-        // TODO - provide dynamic solution to pulling multiple styles        
-        //var strPathToBundledCss = strStylesPaths;         
-        //strAllStyles = fs.readFileSync(strPathToBundledCss, "utf8"); 
 
+        // RESTORE FOR BUILD   
+        //var strStylesPaths = getOption(options, 'strStylesPaths');
+        //var regExcludeClasses = getOption(options, 'regExcludeClasses');
+        //var isExcludeBemModifier = getOption(options, 'isExcludeBemModifier');
+        //isExcludeBemModifier = (isExcludeBemModifier ==='true')?true:false;
+
+        /*
+        var getDirFiles = function(dir, strExt) {
+            var reg = RegExp('\\.' + strExt + '$');
+            var results = [];
+            var list = fs.readdirSync(dir);
+            list.forEach(function(file) {
+                file = dir + '/' + file;
+
+                file = file.replace(/\//g,'\\');
+                file = file.replace(/\\/g,'\\\\');
+
+                var stat = fs.statSync(file)
+
+
+                if (stat && stat.isDirectory()){
+                    results = results.concat(walkFiles(file, strExt));
+                }else if(reg.test(file)){
+                    results.push(file);
+                }                        
+            })
+            return results;
+        }
+        var concatFilesContent = function(files){
+            var arr = [];
+            for(key in files){
+                var filePath = files[key];
+                var content = fs.readFileSync(filePath, "utf8");
+                arr.push(content);
+            }
+
+            return arr.join('');
+        }
+        var concatAllCssFiles = function(strStylesPaths){
+            var arrFiles = strStylesPaths.split(',');
+            var arr = [];
+            for(var i=0, intLen = arrFiles.length; i < intLen; ++i){
+                var strFilePath = arrFiles[i];
+                arr = arr.concat(getDirFiles(strFilePath, 'css'));    
+            }
+            var strAllStyles = concatFilesContent(arr); 
+            return strAllStyles;           
+        }
+        var strAllStyles = concatAllCssFiles(strStylesPaths);
+        */
+        
 
         var allEvent = function(event) {
             if(event.type == 'start'){
 
                 var html = event.html;
 
-                var arrReport = reportMultipleClassesWithSameProps(html, strAllStyles, regExcludeClasses);
+                var arrReport = reportMultipleClassesWithSameProps(html, strAllStyles, regExcludeClasses, true);
 
                 for(var i=0, intLen = arrReport.length; i < intLen; ++i){
                     var objReport = arrReport[i];
