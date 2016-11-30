@@ -16,10 +16,12 @@ StyleBlocksFilter.prototype = {
             var strClass = arrClasses[i];
 
             if(strClass){
-//console.log('strClass = ', strClass);
-                objStylesFiltered['.' + strClass] = [];
 
-                objStylesFiltered = this.filterOutParents(strClass, objStyles, objElem, objStylesFiltered);
+//console.log('styleBlocksFilter - strClass = ', strClass);
+
+
+                objStylesFiltered['.' + strClass] = [];
+                objStylesFiltered = this.filterOutParents(strClass, objStyles, objElem, objStylesFiltered);                
             }
         }
 
@@ -41,9 +43,19 @@ StyleBlocksFilter.prototype = {
         var arrStyles = objStyles['.' + strClass];
 
 
+
         if(arrStyles){
             for(var i = 0, intLen = arrStyles.length; i < intLen; ++i){
                 var objEachStyle = arrStyles[i];
+
+
+                // We don't need two lots of objStylesFiltered['.' + strClass] to match properties against in reportMultilpleClassesWithSameProps                
+                var isExistingAdjoinedToThis = this.getExistingAdjoinedWith(objStylesFiltered, objEachStyle);
+                if(isExistingAdjoinedToThis){
+                    delete objStylesFiltered['.' + strClass];
+                    return objStylesFiltered;
+                }
+
                 var block = objEachStyle.block;
 
 
@@ -53,7 +65,7 @@ StyleBlocksFilter.prototype = {
 
                 var strPrecedingSelector = this.getPreceedingSelector(block);        
                 var isParent = this.recurseParentsToMatchPreceedingSelectors(block, strPrecedingSelector, objElem.parent);
-    //console.log('isParent = ', isParent);            
+          
                 if(isParent){
                     objStylesFiltered['.' + strClass].push(objEachStyle);
                 }       
@@ -61,9 +73,20 @@ StyleBlocksFilter.prototype = {
             }
         }
 
-
         return objStylesFiltered;
     }, 
+    getExistingAdjoinedWith:function(objStylesFiltered, objEachStyle){
+        var arrAdjoinedWith = objEachStyle.arrAdjoinedWith;
+            
+        if(arrAdjoinedWith){
+            for(var i=0, intLen = arrAdjoinedWith.length; i < intLen; ++i){
+                var strEachSelector = arrAdjoinedWith[i];
+                if(typeof objStylesFiltered[strEachSelector]!=='undefined'){
+                    return true;
+                }
+            }
+        }
+    },
     removeClassFromEndOfBlock:function(block, strClass){
         return block.substring(0, block.lastIndexOf('.' + strClass));
     },
@@ -178,7 +201,7 @@ StyleBlocksFilter.prototype = {
         if(strElem && strElem!=='' && objElem.elem !== strElem){         
             return false;
         }
-        var attr = objElem.attr;
+        var attr = objElem.attr || {};
 
         // test if id
         var strId = objAdjoined.strId;
@@ -189,6 +212,9 @@ StyleBlocksFilter.prototype = {
 
         var arrClasses = objAdjoined.arrClasses;
         if(arrClasses && arrClasses.length){
+            if(!attr.class){
+                return false;
+            }
             for(var i=0, intLen = arrClasses.length; i < intLen; ++i){
                 var strClass = arrClasses[i];
                 var reg = RegExp('(^|\\s)' + strClass.substr(1) + '(\\s|$)');

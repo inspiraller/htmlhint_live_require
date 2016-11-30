@@ -670,30 +670,39 @@ HTMLHint.addRule({
 
         var self = this;
 
-        // REMOVE FOR BUILD
-        
+        // REMOVE FOR BUILD        
         var reporter = {
             error:function(str, intLine){
                 console.log(str);
             }
-
-
         }
-        // REMOVE FOR BUILD
         var strAllStyles = $('#styles').val();
+        var regExcludeClasses =  '(\\.gr\\-1|\\.gr\\-2)+';
+
 
         // RESTORE FOR BUILD
-        //var strPathToBundledCss = options;
-        // example styles
-        //var strAllStyles = '.classX{ background:red;}';        
-        //strAllStyles = fs.readFileSync(strPathToBundledCss, "utf8");        
+        
+        /*{
+            "tag-pair": true,
+            "multiple-classes-same-property":"strStylesPaths=C:\\projects\\careers\\Cwo.Careers.Web.UI\\ui\\app\\css\\styles.min.css;regExcludeClasses=(\\.gr\\-1|\\.gr\\-2)+"
+        }*/
+
+        //var arrOptions = options.split(';');
+        //var strStylesPaths = arrOptions[0].substr(arrOptions[0].indexOf('=')+1);      
+        //var regExcludeClasses = (arrOptions.length > 1)? arrOptions[1].substr(arrOptions[1].indexOf('=')+1):null;
+        //var strAllStyles = '.classX{ background:red;}'; 
+
+        // TODO - provide dynamic solution to pulling multiple styles        
+        //var strPathToBundledCss = strStylesPaths;         
+        //strAllStyles = fs.readFileSync(strPathToBundledCss, "utf8"); 
+
 
         var allEvent = function(event) {
             if(event.type == 'start'){
 
                 var html = event.html;
 
-                var arrReport = reportMultipleClassesWithSameProps(html, strAllStyles, /(\.gr\-1|\.gr\-2)/);
+                var arrReport = reportMultipleClassesWithSameProps(html, strAllStyles, regExcludeClasses);
 
                 for(var i=0, intLen = arrReport.length; i < intLen; ++i){
                     var objReport = arrReport[i];
@@ -713,6 +722,7 @@ HTMLHint.addRule({
         parser.addListener("start", allEvent);
     }
 });
+
 
 /**
  * Copyright (c) 2015, Yanis Wang <yanis.wang@gmail.com>

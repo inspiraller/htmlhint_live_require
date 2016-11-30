@@ -15,7 +15,6 @@ StyleBlocks.prototype = {
         if(arrClasses.length > 1){
             obj = this.findClassesInStyles(strAllStyles, arrClasses, obj);           
         }
- //console.log('objStyles = ', obj);
         return obj;
     },
     findClassesInStyles : function(strAllStyles, arrClasses, obj){
@@ -26,33 +25,50 @@ StyleBlocks.prototype = {
             var strClass = '.' + arrClasses[i];
             var encodedSelector = '\\.' + arrClasses[i];
 
-            obj[strClass] = [];
-           
-
             var regMatchWholeBlock = RegExp('(^|\\n|\\}) *([^\\{\\}\\n]*' + encodedSelector + '\\s*[\\,\\{\\.\\#\\:\\[][^\\}]*\\})','g');
             var regMatchSameClass = RegExp('(^|\\,)([^\\{\\,]*' + encodedSelector + '(\\[[^\\]]*\\]|\\:[^\\:][^\\,\\{]*|[\\#\\.][^\\,\\{]*)*)\\s*[\\,\\{]','g');
-
-
 
             var arrMatch = null;
 
             while(arrMatch = regMatchWholeBlock.exec(strAllStyles)){          
                 var strMatch = arrMatch[2];               
-                var intLine = this.getLine(strAllStyles, regMatchWholeBlock.lastIndex);              
-                obj = this.filterCombinedClassesToSingleLine(obj, strClass, strMatch, intLine, regMatchSameClass);
+                var intLine = this.getLine(strAllStyles, regMatchWholeBlock.lastIndex);  
+   
+
+                var strLastSelector = this.getLastSelector(strMatch);
+                obj[strClass] = [];
+
+                var arrAdjoinedWith = this.getAdjoinedWith(strLastSelector, strClass, strLastSelector);
+
+                obj = this.filterCombinedClassesToSingleLine(obj, strClass, strMatch, intLine, regMatchSameClass, strLastSelector, arrAdjoinedWith);
 
             }
-
-            if(!obj[strClass].length){
-                delete obj[strClass];
-            }
-
         }
-
 
         return obj;
     },
-    filterCombinedClassesToSingleLine : function(obj, strClass, strMatch,  intLine, regMatchSameClass){
+    getLastSelector:function(strMatch){
+        var reg = /(^|\s)([\w\.\#\[\(][^\s\{\}]*)\s*(\{|$)/;
+        var arrLastSelector = strMatch.match(reg);
+        if(arrLastSelector && arrLastSelector.length){
+            return arrLastSelector[2];
+        }
+        return null;
+    },
+    getAdjoinedWith:function(strSelectors, strClass, strLastSelector){
+        // TODO - tidy up
+        var reg = /([\w\.\#\[\(][^\s\{\}\.\#\[\(]+)/g;
+        var arrMatch;
+        var arrAdjoinedWith = [];
+
+        while(arrMatch = reg.exec(strSelectors)){
+            if(arrMatch[1] !== strClass){
+                arrAdjoinedWith.push(arrMatch[1]);
+            }
+        }
+        return arrAdjoinedWith;
+    },
+    filterCombinedClassesToSingleLine : function(obj, strClass, strMatch,  intLine, regMatchSameClass, strLastSelector, arrAdjoinedWith){
         // replace all other commas..
         var strNoContentInComments = this.replaceContentInComments(strMatch);
         var strCssProps = strMatch.replace(/^[^\{]*/,'');
@@ -66,13 +82,17 @@ StyleBlocks.prototype = {
 
             var strFiltered = strEach + strCssProps;
 
-            obj[strClass].push({
-                selector:strClass,
+            var objToPush = {
+                selector:strLastSelector,
                 line:intLine,
                 block:strFiltered,
                 all:strMatch,
                 props:props
-            });
+            };
+            if(arrAdjoinedWith.length > 0){
+                objToPush.arrAdjoinedWith = arrAdjoinedWith;
+            }
+            obj[strClass].push(objToPush);
         }
         return obj;
     },

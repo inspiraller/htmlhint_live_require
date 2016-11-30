@@ -7,10 +7,7 @@ ReportMultipleClassesWithSameProps.prototype = {
     init:function(html, strAllStyles, regExclude){
 
         var arrHtmlJson = this.getHtmlAsJson(html);
-  
-
         var arrReport = this.recurseJson(arrHtmlJson, html, strAllStyles, regExclude);
-
 //console.log('arrReport = ', arrReport);
         return arrReport;
     },  
@@ -30,17 +27,9 @@ ReportMultipleClassesWithSameProps.prototype = {
         
 
         if(strWrapped){
-    //console.log('######################################################################################################');
-    //console.log('wrapped = ',strWrapped);
-
             var arrHtmlJson = createHtmlAsJson(strWrapped, markers.strMarkerHandle);
             return arrHtmlJson;
         }
-
-    //console.log('######################################################################################################');
-    //console.log('arrHtmlJson =');
-    //console.dir(arrHtmlJson);
-
 
         return [];
     },
@@ -53,9 +42,9 @@ ReportMultipleClassesWithSameProps.prototype = {
             var attr = objElem.attr;
             var strClasses = (attr)?attr.class:'';
 
-            //console.log('line = ', objElem.line);  
-            //var arrLines = html.split('\n');
-            //console.log('line extract = ', arrLines[objElem.line]);
+            //console.log('##############################################################################')
+            //console.log('recurseJson - elem = ', objElem.elem);  
+
 
             if(strClasses){
                 var isMultipleClasses = strClasses.split(' ').length > 1;
@@ -71,31 +60,21 @@ ReportMultipleClassesWithSameProps.prototype = {
     },
     filterOutNonParents:function(strAllStyles, strClasses, objElem, regExclude, arrReport){   
 
+        var strClassesCombined = strClasses.replace(/(^|\s+)/g,'.');
 
-// TO REMOVE - 
-// THIS IS JUST FOR TESTING
-//if(strClasses !== 'theClass1 theClass2'){
-    //return arrReport;
-//}     
-
-    // TODO:
-        // if an element has more than one class.
-        // search theClass in bundle.css and build an array of all items found, irrespective of parent or sibling classes.
-
-        // filter down the class by each preclass/id
-            // sibling
-            // parent
-                // repeat onto the next preclass/id until no more levels exist.
-                // once you have an array of all remaining classes - compare the properties, and if any are shared, provide error message.
+        if(regExclude){
+            var regExcludeClasses = RegExp(regExclude,'g');
+            strClassesCombined = strClassesCombined.replace(regExcludeClasses, '');
+            strClasses = strClassesCombined.replace(/\./g,' ');
+        }
         
-        strClassesCombined = strClasses.replace(/(^|\s+)/g,'.');
-        strClassesCombined = strClassesCombined.replace(regExclude, '');
-        strClasses = strClassesCombined.replace(/\./g,' ');
-
         var objStyles = styleBlocks(strAllStyles, strClassesCombined);
+        var isStyles = (Object.keys(objStyles).length > 0)?true:false;
+        var objStylesFiltered = (isStyles)?styleBlocksFilter(strClasses, objElem, objStyles):{};
 
-        var objStylesFiltered = styleBlocksFilter(strClasses, objElem, objStyles);
-
+//console.log('________________________________________');
+//console.log('objStyles = ', objStyles);    
+//console.log('objStylesFiltered = ', objStylesFiltered);
 
         var objMatching = this.compareProps(objStylesFiltered);
         var isMatching = (Object.keys(objMatching.properties).length > 0 )? true : false;        
@@ -106,10 +85,8 @@ ReportMultipleClassesWithSameProps.prototype = {
             })
         }
 
-        //arrReport.add
         return arrReport;
 
-        //return objStylesFiltered;
     },
     compareProps:function(objStylesFiltered){
         var isMultipleClasses = Object.keys(objStylesFiltered).length > 1;
