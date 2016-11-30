@@ -1,6 +1,6 @@
 
 var trace = function(x){
-    //console.log(x); - removed for IDE's
+    console.log(x); 
 }
 
 var wrapTagPointers = function(str, markers){
@@ -64,7 +64,7 @@ WrapTagPointers.prototype = {
             // Wrap collapsed/self closing tags
             str = str.replace(/(\<[^>]*\/>)/g,fnReplace);
 
-                
+//console.log('str = ', str);                
 
             str = this.testBadHtml(str, strMarkerStart, strMarkerEnd);
 
@@ -103,6 +103,10 @@ WrapTagPointers.prototype = {
         while(html.search(regAttrNothing) !== -1){           
           html = html.replace(regAttrNothing,'$1' + '$2' + ' ' + '$4' + '="' + '$4' + '"' + '$5');
         }
+     
+        // todo:
+        // <body class="something" id="missingendquote>
+        // <body class="missingendquote id="">
 
         return html;
     },    
@@ -144,7 +148,16 @@ WrapTagPointers.prototype = {
         while(str.search(regInsideScriptComments) !==-1){                   
           str = str.replace(regInsideScriptComments,'$1');
         }
-        str = str.replace(RegExp('\\' + strMarkerEndComment,'g'),'');     
+
+
+        // Remove tagpointers inside <script> or <script type="text/javascript"> or <script language="javascript">          
+        var regInsideScriptComments = RegExp('(<script(\\s+(type\\=\\"text\\/javascript\\"|language\\=\\"javascript\\"))*\s*>)([^\\' + strMarkerEndComment + ']*)[\\' + strMarkerStart + '\\'  + strMarkerEnd  + ']([^\\' + strMarkerEndComment+ ']*)\\' + strMarkerEndComment,'gi');            
+        while(str.search(regInsideScriptComments) !==-1){                   
+          str = str.replace(regInsideScriptComments,'$1' + '$4' + '$5');
+        }
+
+        str = str.replace(RegExp('\\' + strMarkerEndComment,'g'),'');    
+
 
         return str;   
     }
