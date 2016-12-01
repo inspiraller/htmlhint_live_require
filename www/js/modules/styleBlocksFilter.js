@@ -2,8 +2,8 @@
 var styleBlocksFilter = function(strClasses, objElem, objStyles, isExcludeBemModifier){
     var inst = new StyleBlocksFilter();
     return inst.init(strClasses, objElem, objStyles, isExcludeBemModifier);
-}
-var StyleBlocksFilter = function(){}
+};
+var StyleBlocksFilter = function(){};
 StyleBlocksFilter.prototype = {
     init:function(strClasses, objElem, objStyles, isExcludeBemModifier){
         var objStylesFiltered = {};
@@ -144,9 +144,9 @@ StyleBlocksFilter.prototype = {
     matchSelectorsOnParent:function(block, strSelector, objElem){
         var objAdjoined = this.getAdjoined(strSelector);
 
-        var arrClasses = objAdjoined.arrClasses;
-        var strId = objAdjoined.strId;
-        var strElem = objAdjoined.strElem;
+        //var arrClasses = objAdjoined.arrClasses;
+        //var strId = objAdjoined.strId;
+        //var strElem = objAdjoined.strElem;
 
         var isSelectors = (Object.keys(objAdjoined).length > 0)? true:false;
 
@@ -155,7 +155,7 @@ StyleBlocksFilter.prototype = {
 
 
             if(isParentMatchAdjoined){                
-                var block = this.removeLastAjoiningSelectorsFromBlock(block);
+                block = this.removeLastAjoiningSelectorsFromBlock(block);
 
                 var strPrevPrecedingSelector = this.getPreceedingSelector(block);
                 return this.recurseParentsToMatchPreceedingSelectors(block, strPrevPrecedingSelector, objElem.parent);       
@@ -171,8 +171,9 @@ StyleBlocksFilter.prototype = {
         var objAdjoined = {};
 
         var arrClasses = [];
-        var strId = '';
-        var strElem = '';
+        //var strId = '';
+        //var strElem = '';
+        
 
         var isSiblingSelector = (strSelector.search(/[\+\~]\s*$/)!==-1)?true:false;
 
@@ -185,9 +186,13 @@ StyleBlocksFilter.prototype = {
             // get classes
             var regAllCombinedClasses = /\.[^\.\#\s\>\+\~\[\(\:]+/g;
             var arrMatch;
-            while(arrMatch = regAllCombinedClasses.exec(strSelector)){                
-                arrClasses.push(arrMatch[0]); 
-            }
+
+            do{
+                arrMatch = regAllCombinedClasses.exec(strSelector);
+                if(arrMatch){
+                    arrClasses.push(arrMatch[0]); 
+                }
+            }while(arrMatch);
 
             if(arrClasses.length){
                 objAdjoined.arrClasses = arrClasses;

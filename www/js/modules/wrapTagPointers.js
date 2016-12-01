@@ -1,11 +1,11 @@
 
 var trace = function(x){
     console.log(x); 
-}
+};
 
 var wrapTagPointers = function(str, markers){
     return new WrapTagPointers().init(str, markers);
-}
+};
 
 var WrapTagPointers = function(){};
 
@@ -39,9 +39,9 @@ WrapTagPointers.prototype = {
             str = str.replace(/(<\w+([\s\:][^>]*[^\/])?>)/g, strMarkerStart + "$1");
             str = str.replace(/(<\/\w+([\s\:][^>]*)?>)/g,"$1"+strMarkerEnd);
 
-
-
             str = this.removePointersInComments(str, strMarkerStart, strMarkerEnd, strMarkerEndComment);
+
+
 
             //Loop through each wrapped tag and add a handle marker around it. Example:
             //search: �(<(tag) >...</(tag)>)`
@@ -57,27 +57,32 @@ WrapTagPointers.prototype = {
                 var strA = ((strMarkerHandle + intC + ' ') +  arg[1] + (strMarkerHandle + intC + ' '));
                 ++intC;
                 return strA;
-            }
+            };
             // Wrap uncollapsed tags
             while(str.search(regI)!== -1) {str = str.replace(regI,fnReplace);}
 
             // Wrap collapsed/self closing tags
-            str = str.replace(/(\<[^>]*\/>)/g,fnReplace);
-
-//console.log('str = ', str);                
-
-            str = this.testBadHtml(str, strMarkerStart, strMarkerEnd);
+            str = str.replace(/(<[^>]*\/>)/g,fnReplace);
+             
+//console.log('str = ', str);             
+            return this.testBadHtml(str, strMarkerStart, strMarkerEnd);
 
         }else{
-            //not valid, firebug would show errors.
-            trace('You have not supplied any html!');
+            return {
+                isValid:false,
+                intStartLine:0,
+                strMsg:'You have not supplied any html!',
+                strHtml:str
+            };            
         }
 
-
-        return str;
     },
     fixSelfClosing:function(str){
-        return str.replace(/<(img|hr|br|meta|area|base|col|command|embed|input|keygen|link|param|source|track|wbr)([^>]*)\/?>/g,'<$1' + '$2/>');
+        str = str.replace(/<(img|hr|br|meta|area|base|col|command|embed|input|keygen|link|param|source|track|wbr)([^>]*)\/?>/g,'<$1' + '$2/>');
+
+        // if self closing fix has added to a non self closing item - ie <input></input> then remove the self closing fix.
+        str = str.replace(/<(img|hr|br|meta|area|base|col|command|embed|input|keygen|link|param|source|track|wbr)([^<>]*)\/(>[^<]*<\/\1\s*>)/g,'<' + '$1' + '$2' + '$3');
+        return str;
     },
     fixQuotes:function(html){
 
@@ -113,47 +118,73 @@ WrapTagPointers.prototype = {
     testBadHtml:function(str, strMarkerStart, strMarkerEnd){
         // Test bad html
         var intStartBad = str.lastIndexOf(strMarkerStart);
-        var intEndBad = str.search(strMarkerEnd);
+
         if(intStartBad!==-1){
             var strStart = str.substr(intStartBad);
             var strStartTag = strStart.substring(0, strStart.indexOf('>'));
-            var intStartLine = str.substring(0, intStartBad).split('\n').length - 1;
+            var intStartLine = str.substring(0, intStartBad).split('\n').length;
+
+            // find first instance of bad marker.
+            var intEndBad = intStartBad + str.substr(intStartBad).search(strMarkerEnd);
 
             var strBad = str.substring(0, intEndBad);
             var strBadTag = strBad.substr(strBad.lastIndexOf('<'));
-            var intBadLine = str.substring(0, intEndBad).split('\n').length - 1;
+            var intBadLine = str.substring(0, intEndBad).split('\n').length;
 
             strStartTag = strStartTag.replace(strMarkerStart,'');
             strBadTag = strBadTag.replace(strMarkerEnd,'');
 
-            trace('Your html is not well formed. line:' + intStartLine + ', tag:' + strStartTag + ' doesnt match line: ' + intBadLine + ', tag: ' + strBadTag);
-
-            return null;
+            return {
+                isValid:false,
+                intStartLine:intStartLine,
+                intBadLine:intBadLine,
+                strMsg:'Your html is not well formed. line:' + intStartLine + ', tag:' + strStartTag + ' doesnt match line: ' + intBadLine + ', tag: ' + strBadTag,
+                strHtml:str
+            };
         }
-        return str;
+        return {
+            isValid:true,
+            strHtml:str
+        }; 
     },
     removePointersInComments:function(str, strMarkerStart, strMarkerEnd, strMarkerEndComment){
 
-        // Remove tagpointers inside comments /**/ or <!-- --> or <![CDATA[ ]]> 
-        str = str.replace(/(\-\-\>|\*\/|\\]\\]>)/g,'$1' + strMarkerEndComment);            
-        var regInsideComments = RegExp('((<\\!--|\\/\\*|<\\!\\[CDATA)[^\\' + strMarkerEndComment + '\\' + strMarkerStart + '\\'  + strMarkerEnd + ']*' + ')[\\' + strMarkerStart + '\\' + strMarkerEnd + ']','gi');      
+        // remove any existing end marker after a --<
+        str = str.replace(RegExp('(\\-\\->)\\' + strMarkerEnd,'g'),'$1');
+
+        // Remove tagpointers inside  <!-- --> 
+        str = str.replace(RegExp('(\\-\\->)','g'),'$1' + strMarkerEndComment);
+        var regInsideComments = RegExp('(<\\!\\-\\-[^\\' + strMarkerEndComment + '\\' + strMarkerStart + '\\'  + strMarkerEnd + ']*' + ')[\\' + strMarkerStart + '\\' + strMarkerEnd + ']','gi');      
         while(str.search(regInsideComments) !==-1){                   
           str = str.replace(regInsideComments,'$1');
         }
-        str = str.replace(RegExp('\\' + strMarkerEndComment,'g'),'');
-        
-        // Remove tagpointers inside script comments //
-        str = str.replace(/(<\/script\s*>)/g,'$1' + strMarkerEndComment);            
-        var regInsideScriptComments = RegExp('(<script(\s|>)[^\\' + strMarkerEndComment + ']*\\/\\/[^\\n\\r\\f\\' + strMarkerEndComment + ']*)[\\' + strMarkerStart + '\\'  + strMarkerEnd  + ']','gi');            
-        while(str.search(regInsideScriptComments) !==-1){                   
-          str = str.replace(regInsideScriptComments,'$1');
+
+        // Remove tagpointers inside  <![CDATA[]]>
+        str = str.replace(/(\]\]>)/g,'$1' + strMarkerEndComment);
+
+        var regInsideCdata = RegExp('(<\\!\\[CDATA\\[[^\\' + strMarkerEndComment + '\\' + strMarkerStart + '\\'  + strMarkerEnd + ']*' + ')[\\' + strMarkerStart + '\\' + strMarkerEnd + ']','gi');      
+        while(str.search(regInsideCdata) !==-1){                   
+          str = str.replace(regInsideCdata,'$1');
         }
 
+        // Remove tagpointers inside <script> or <script type="text/javascript"> or <script language="javascript">        
+        str = str.replace(/(<\/script\s*>)/g,'$1' + strMarkerEndComment);              
+        var regInsideScript = RegExp('(<script(\\s+(type\\=\\"text\\/javascript\\"|language\\=\\"javascript\\"))*\s*>)([^\\' + strMarkerEndComment + ']*)[\\' + strMarkerStart + '\\'  + strMarkerEnd  + ']([^\\' + strMarkerEndComment+ ']*)\\' + strMarkerEndComment,'gi');            
+        while(str.search(regInsideScript) !==-1){                   
+          str = str.replace(regInsideScript,'$1' + '$4' + '$5');
+        }
+       
+        // Remove tagpointers inside script comments //        
+        var regInsideScriptLineComment = RegExp('(<script(\s|>)[^\\' + strMarkerEndComment + ']*\\/\\/[^\\n\\r\\f\\' + strMarkerEndComment + ']*)[\\' + strMarkerStart + '\\'  + strMarkerEnd  + ']','gi');            
+        while(str.search(regInsideScriptLineComment) !==-1){                   
+          str = str.replace(regInsideScriptLineComment,'$1');
+        }
 
-        // Remove tagpointers inside <script> or <script type="text/javascript"> or <script language="javascript">          
-        var regInsideScriptComments = RegExp('(<script(\\s+(type\\=\\"text\\/javascript\\"|language\\=\\"javascript\\"))*\s*>)([^\\' + strMarkerEndComment + ']*)[\\' + strMarkerStart + '\\'  + strMarkerEnd  + ']([^\\' + strMarkerEndComment+ ']*)\\' + strMarkerEndComment,'gi');            
-        while(str.search(regInsideScriptComments) !==-1){                   
-          str = str.replace(regInsideScriptComments,'$1' + '$4' + '$5');
+        // Remove tagpointers inside script comments /* */
+        str = str.replace(/(\/\*)/g,'$1' + strMarkerEndComment);     
+        var regInsideStar = RegExp('(\\/\\*[^\\' + strMarkerEndComment + '\\' + strMarkerStart + '\\'  + strMarkerEnd + ']*' + ')[\\' + strMarkerStart + '\\' + strMarkerEnd + ']','gi');      
+        while(str.search(regInsideStar) !==-1){                   
+          str = str.replace(regInsideStar,'$1');
         }
 
         str = str.replace(RegExp('\\' + strMarkerEndComment,'g'),'');    
@@ -161,4 +192,4 @@ WrapTagPointers.prototype = {
 
         return str;   
     }
-}
+};

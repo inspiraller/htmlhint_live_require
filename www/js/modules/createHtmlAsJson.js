@@ -1,32 +1,36 @@
 var createHtmlAsJson = function(html, strMarkerHandle){
 
-    var objParent = (arguments.length > 2)?arguments[2]:{};
-    var intLineNum = (arguments.length > 3)?arguments[3]:0;
+  var objParent = (arguments.length > 2)?arguments[2]:{};
+  var intLineNum = (arguments.length > 3)?arguments[3]:0;
+  
+  var arrChildren = [];
+
+
+  // TODO:, reduce these down to one, by doing a find and replace on all attributes to ensure they are all one type, ie attr="dbl quoted value"
+  var regAttr1 = /\s([^\=<>\s\'\"]+)\=\"([^\"]*)\"/g;
+
+
+  // Get children of each top element.
+  // TODO: supply this regex to the function, to save redeclaring it.
+  var regPairs = new RegExp('(\\' + strMarkerHandle + '(\\d+) <(\\w[^\\s<>]*)([^<>]*)>)([\\w\\W]*)\\' + strMarkerHandle + '\\2 ','g');        
+
+  if(html.search(regPairs) === -1){
+    arrChildren.push({
+      elem:'textNode',
+      content:html
+    });
+  }else{
     
-    var arrChildren = [];
-  
+    // on each child of top element, capture the elem, content, attributes.
+    // if the child has children then recurse again.
+    
+    var arrMatch = null;
+    var obj;
+    do{
 
-    // TODO:, reduce these down to one, by doing a find and replace on all attributes to ensure they are all one type, ie attr="dbl quoted value"
-    var regAttr1 = /\s([^\=<>\s\'\"]+)\=\"([^\"]*)\"/g;
+      arrMatch = regPairs.exec(html);
 
-  
-    // Get children of each top element.
-    // TODO: supply this regex to the function, to save redeclaring it.
-    var regPairs = new RegExp('(\\' + strMarkerHandle + '(\\d+) <(\\w[^\\s<>]*)([^<>]*)>)([\\w\\W]*)\\' + strMarkerHandle + '\\2 ','g');        
-
-    if(html.search(regPairs) === -1){
-      arrChildren.push({
-        elem:'textNode',
-        content:html
-      });
-    }else{
-      
-      // on each child of top element, capture the elem, content, attributes.
-      // if the child has children then recurse again.
-      
-      var arrMatch = null;
-      var obj;
-      while(arrMatch = regPairs.exec(html)){          
+      if(arrMatch){
              
         
         obj = {};
@@ -50,11 +54,15 @@ var createHtmlAsJson = function(html, strMarkerHandle){
           obj.attr = {};
           
           // TODO: only have one while, for one type of attribute supplied.
-          while(arrAttr = regAttr1.exec(attr)){
-            var key = arrAttr[1];
-            var val = arrAttr[2];
-            obj.attr[key] = val;          
-          }
+
+          do{
+            arrAttr = regAttr1.exec(attr);
+            if(arrAttr){
+              var key = arrAttr[1];
+              var val = arrAttr[2];
+              obj.attr[key] = val; 
+            }         
+          }while(arrAttr);
         }
 
         if(content){
@@ -69,7 +77,8 @@ var createHtmlAsJson = function(html, strMarkerHandle){
         if(arrChildren.length > 1){
           obj.preSiblings = arrChildren.slice(0, arrChildren.length - 1); 
         }   
-    }  
+      }
+    } while(arrMatch);
   }
   return arrChildren;   
 
@@ -120,4 +129,4 @@ var json = [{
 }] 
     */
 
-}
+};

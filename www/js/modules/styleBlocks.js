@@ -1,10 +1,8 @@
-var encodeSelector = function(str){
-    return str.replace(/([^\w\d\s<>])/gi,'\\' + '$1');
-}
 
 var styleBlocks = function(strAllStyles, strSelectors){
     return new StyleBlocks().init(strAllStyles, strSelectors);
-}
+};
+
 var StyleBlocks = function(){};
 StyleBlocks.prototype = {
     init : function(strAllStyles, strSelectors){
@@ -30,19 +28,23 @@ StyleBlocks.prototype = {
 
             var arrMatch = null;
 
-            while(arrMatch = regMatchWholeBlock.exec(strAllStyles)){          
-                var strMatch = arrMatch[2];               
-                var intLine = this.getLine(strAllStyles, regMatchWholeBlock.lastIndex);  
-   
 
-                var strLastSelector = this.getLastSelector(strMatch);
-                obj[strClass] = [];
+            do{
+                arrMatch = regMatchWholeBlock.exec(strAllStyles);
+                if(arrMatch){
+                    var strMatch = arrMatch[2];               
+                    var intLine = this.getLine(strAllStyles, regMatchWholeBlock.lastIndex);  
+       
 
-                var arrAdjoinedWith = this.getAdjoinedWith(strLastSelector, strClass, strLastSelector);
+                    var strLastSelector = this.getLastSelector(strMatch);
+                    obj[strClass] = [];
 
-                obj = this.filterCombinedClassesToSingleLine(obj, strClass, strMatch, intLine, regMatchSameClass, strLastSelector, arrAdjoinedWith);
+                    var arrAdjoinedWith = this.getAdjoinedWith(strLastSelector, strClass);
 
-            }
+                    obj = this.filterCombinedClassesToSingleLine(obj, strClass, strMatch, intLine, regMatchSameClass, strLastSelector, arrAdjoinedWith);
+                }
+            } while(arrMatch);
+            
         }
 
         return obj;
@@ -55,17 +57,21 @@ StyleBlocks.prototype = {
         }
         return null;
     },
-    getAdjoinedWith:function(strSelectors, strClass, strLastSelector){
+    getAdjoinedWith:function(strSelectors, strClass){
         // TODO - tidy up
         var reg = /([\w\.\#\[\(][^\s\{\}\.\#\[\(]+)/g;
         var arrMatch;
         var arrAdjoinedWith = [];
 
-        while(arrMatch = reg.exec(strSelectors)){
-            if(arrMatch[1] !== strClass){
-                arrAdjoinedWith.push(arrMatch[1]);
+        do{
+            arrMatch = reg.exec(strSelectors);
+            if(arrMatch){
+                if(arrMatch[1] !== strClass){
+                    arrAdjoinedWith.push(arrMatch[1]);
+                }
             }
-        }
+        }while(arrMatch);
+
         return arrAdjoinedWith;
     },
     filterCombinedClassesToSingleLine : function(obj, strClass, strMatch,  intLine, regMatchSameClass, strLastSelector, arrAdjoinedWith){
@@ -75,25 +81,30 @@ StyleBlocks.prototype = {
         var arrMatchSameClass;
         var props = this.getProps(strCssProps);
 
-        while(arrMatchSameClass = regMatchSameClass.exec(strNoContentInComments)){
-            var strEach = arrMatchSameClass[2];
-            
-            strEach = strEach.replace(/^\s*\}?\s*/,'');
+        do{
+            arrMatchSameClass = regMatchSameClass.exec(strNoContentInComments);
 
-            var strFiltered = strEach + strCssProps;
+            if(arrMatchSameClass){
+                var strEach = arrMatchSameClass[2];
+                
+                strEach = strEach.replace(/^\s*\}?\s*/,'');
 
-            var objToPush = {
-                selector:strLastSelector,
-                line:intLine,
-                block:strFiltered,
-                all:strMatch,
-                props:props
-            };
-            if(arrAdjoinedWith.length > 0){
-                objToPush.arrAdjoinedWith = arrAdjoinedWith;
+                var strFiltered = strEach + strCssProps;
+
+                var objToPush = {
+                    selector:strLastSelector,
+                    line:intLine,
+                    block:strFiltered,
+                    all:strMatch,
+                    props:props
+                };
+                if(arrAdjoinedWith.length > 0){
+                    objToPush.arrAdjoinedWith = arrAdjoinedWith;
+                }
+                obj[strClass].push(objToPush);
             }
-            obj[strClass].push(objToPush);
-        }
+        } while (arrMatchSameClass);
+
         return obj;
     },
     getProps:function(strCssProps){
@@ -103,11 +114,16 @@ StyleBlocks.prototype = {
  
             var arr;
             var props = {};
-            while(arr = reg.exec(strCssProps)){
-                var key = arr[1];
-                var val = arr[2]
-                props[key] = val;
-            }
+            
+            do{
+                arr = reg.exec(strCssProps);
+                if(arr){
+                    var key = arr[1];
+                    var val = arr[2];
+                    props[key] = val;
+                }
+            }while(arr);
+
             return props;
             
         }
@@ -126,5 +142,5 @@ StyleBlocks.prototype = {
         });
         return style;
     }    
-}
+};
 
