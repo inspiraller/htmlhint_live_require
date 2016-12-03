@@ -37,7 +37,9 @@ StyleBlocks.prototype = {
        
 
                     var strLastSelector = this.getLastSelector(strMatch);
-                    obj[strClass] = [];
+                    if(!obj[strClass]){
+                        obj[strClass] = [];
+                    }
 
                     var arrAdjoinedWith = this.getAdjoinedWith(strLastSelector, strClass);
 
