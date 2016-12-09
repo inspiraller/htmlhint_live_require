@@ -9,6 +9,9 @@ var createHtmlAsJson = function(html, strMarkerHandle){
   // TODO:, reduce these down to one, by doing a find and replace on all attributes to ensure they are all one type, ie attr="dbl quoted value"
   var regAttr1 = /\s([^\=<>\s\'\"]+)\=\"([^\"]*)\"/g;
 
+  var trim = function(str){
+    return str.replace(/^\s\s*/, '').replace(/\s\s*$/, '');
+  }
 
   // Get children of each top element.
   // TODO: supply this regex to the function, to save redeclaring it.
@@ -60,6 +63,8 @@ var createHtmlAsJson = function(html, strMarkerHandle){
             if(arrAttr){
               var key = arrAttr[1];
               var val = arrAttr[2];
+              val = trim(val);   
+              key = trim(key);            
               obj.attr[key] = val; 
             }         
           }while(arrAttr);

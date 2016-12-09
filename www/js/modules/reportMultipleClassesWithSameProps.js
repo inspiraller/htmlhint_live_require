@@ -15,22 +15,24 @@ ReportMultipleClassesWithSameProps.prototype = {
 
 
         var arrHtmlJson = this.getHtmlAsJson(strWrapped, markers);
-        var arrReport = this.recurseJson(arrHtmlJson, strAllStyles, strRegExcludeClasses, isExcludeBemModifier);
-//console.log('arrReport = ', arrReport);
-        return arrReport;
+        var objReport = this.recurseJson(arrHtmlJson, strAllStyles, strRegExcludeClasses, isExcludeBemModifier);
+//console.log('objReport = ', objReport);
+        return objReport;
     },  
-
+    trim: function(str){
+        return str.replace(/^\s\s*/, '').replace(/\s\s*$/, '');
+    },
     getHtmlAsJson : function(strWrapped, markers){
         // remove everything outside body
         //html = html.replace(/^[\w\W]*(<body(\s[^<>]*>|>)[\w\W]*<\/body\s*>)[\w\W]*$/gi,'$1');
         
-        var arrHtmlJson = createHtmlAsJson(strWrapped, markers.strMarkerHandle);
+        var arrHtmlJson = createHtmlAsJson(strWrapped, markers.strMarkerHandle);       
         return arrHtmlJson;
         
     },
 
-    recurseJson:function(arrHtmlJson, strAllStyles, strRegExcludeClasses, isExcludeBemModifier){//, arrReport
-        var arrReport = (arguments.length > 4)?arguments[4]:[];
+    recurseJson:function(arrHtmlJson, strAllStyles, strRegExcludeClasses, isExcludeBemModifier){//, objReport
+        var objReport = (arguments.length > 4)?arguments[4]:[];
         
         for(var i = 0, intLen = arrHtmlJson.length; i < intLen; ++i){
             var objElem = arrHtmlJson[i];
@@ -44,16 +46,16 @@ ReportMultipleClassesWithSameProps.prototype = {
             if(strClasses){
                 var isMultipleClasses = strClasses.split(' ').length > 1;
                 if(isMultipleClasses){
-                    arrReport = this.filterOutNonParents(strAllStyles, strClasses, objElem, strRegExcludeClasses, isExcludeBemModifier, arrReport);
+                    objReport = this.filterOutNonParents(strAllStyles, strClasses, objElem, strRegExcludeClasses, isExcludeBemModifier, objReport);
                 }
             }
             if(objElem.children){
-                arrReport = this.recurseJson(objElem.children, strAllStyles, strRegExcludeClasses, isExcludeBemModifier, arrReport);
+                objReport = this.recurseJson(objElem.children, strAllStyles, strRegExcludeClasses, isExcludeBemModifier, objReport);
             }
         }
-        return arrReport;
+        return objReport;
     },
-    filterOutNonParents:function(strAllStyles, strClasses, objElem, strRegExcludeClasses, isExcludeBemModifier, arrReport){   
+    filterOutNonParents:function(strAllStyles, strClasses, objElem, strRegExcludeClasses, isExcludeBemModifier, objReport){   
 
         var strClassesCombined = strClasses.replace(/(^|\s+)/g,'.');
 
@@ -61,11 +63,25 @@ ReportMultipleClassesWithSameProps.prototype = {
             var regExclude = RegExp(strRegExcludeClasses,'g');
             strClassesCombined = strClassesCombined.replace(regExclude, '');
             strClasses = strClassesCombined.replace(/\./g,' ');
+            strClasses = this.trim(strClasses);
         }
         
         var objStyles = styleBlocks(strAllStyles, strClassesCombined);
-        var isStyles = (Object.keys(objStyles).length > 0)?true:false;
+        var isStyles = (Object.keys(objStyles).length > 0)?true:false;        
         var objStylesFiltered = (isStyles)?styleBlocksFilter(strClasses, objElem, objStyles, isExcludeBemModifier):{};
+
+
+        var strSelectorsMissing = this.getMissingSelectors(strClasses, objStyles);
+        if(strSelectorsMissing){
+            if(!objReport.arrSelectorsMissingFromCss){
+                objReport.arrSelectorsMissingFromCss = [];
+            }
+            objReport.arrSelectorsMissingFromCss.push({
+                objElem:objElem,
+                strSelectors:strSelectorsMissing
+            });
+        }
+
 
 //console.log('________________________________________');
 //console.log('objStyles = ', objStyles);    
@@ -74,17 +90,37 @@ ReportMultipleClassesWithSameProps.prototype = {
         var objMatching = this.compareProps(objStylesFiltered);
         var isMatching = (Object.keys(objMatching.properties).length > 0 )? true : false;        
         if(isMatching){
-            arrReport.push({
+
+            if(!objReport.arrMultipleClassesSameProperties){
+                objReport.arrMultipleClassesSameProperties = [];
+            }
+            objReport.arrMultipleClassesSameProperties.push({
                 elem:objElem,
                 matching:objMatching
             });
         }
+        return objReport;
 
-        return arrReport;
+    },
+    getMissingSelectors:function(strClasses, objStyles){
+        var arrClasses = strClasses.split(' ');      
+        var strSelectorsMissing = '';
+        for(var i = 0, intLen = arrClasses.length; i < intLen; ++i){
+            var strClass = arrClasses[i];
+            if(typeof objStyles['.' + strClass] === 'undefined'){
+                if(strSelectorsMissing!==''){
+                    strSelectorsMissing+=',';
+                }
+                strSelectorsMissing+=strClass;
+            }
+        }
+        return strSelectorsMissing;
 
     },
     compareProps:function(objStylesFiltered){
-        var isMultipleClasses = Object.keys(objStylesFiltered).length > 1;
+
+        var isMultipleClasses = (Object.keys(objStylesFiltered).length > 1)? true: false;
+
 
         var objMatchingSelectors = {};
         var objMatchingProperties = {};
