@@ -803,7 +803,7 @@ HTMLHint.addRule({
                         strReport = "Selector(s) don't exist in css: " + strSelectors;
                         var intLine = objElem.line;
 
-                        reporter.error(strReport, intLine, 0, self, event.raw);                    
+                        reporter.warn(strReport, intLine, 0, self, event.raw);                    
                     }
 
                 }else{
