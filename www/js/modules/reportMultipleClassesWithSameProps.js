@@ -111,7 +111,7 @@ ReportMultipleClassesWithSameProps.prototype = {
                 if(strSelectorsMissing!==''){
                     strSelectorsMissing+=',';
                 }
-                strSelectorsMissing+=strClass;
+                strSelectorsMissing+='.' + strClass;
             }
         }
         return strSelectorsMissing;

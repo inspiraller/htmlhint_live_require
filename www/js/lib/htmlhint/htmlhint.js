@@ -781,24 +781,26 @@ HTMLHint.addRule({
                     var arrSelectorsMissingFromCss = objReport.arrSelectorsMissingFromCss || [];
 
 
+                    var i, objElem, strSelectors, strReport;
+
                     for(var i=0, intLen = arrMultipleClassesSameProperties.length; i < intLen; ++i){
                         var objMultiple = arrMultipleClassesSameProperties[i];
-                        var objElem = objMultiple.elem;
+                        objElem = objMultiple.elem;
                         var objMatchingSelectors = Object.keys(objMultiple.matching.selectors);
-                        var strSelectors = objMatchingSelectors.join(',');
+                        strSelectors = objMatchingSelectors.join(',');
                         var objMatchingProperties = Object.keys(objMultiple.matching.properties);
                         var strProperties = objMatchingProperties.join(',');
 
-                        var strReport = "Multiple selectors exist with same properties. selectors = " + strSelectors + '. Properties = ' + strProperties ;
+                        strReport = "Multiple selectors exist with same properties. selectors = " + strSelectors + '. Properties = ' + strProperties ;
                         reporter.error(strReport, objElem.line, 0, self, event.raw);                    
                     }
 
                     for(var i=0, intLen = arrSelectorsMissingFromCss.length; i < intLen; ++i){
                         var objMissing = arrSelectorsMissingFromCss[i];
 
-                        var objElem = objMissing.objElem;
-                        var strSelectors = objMissing.strSelectors;
-                        var strReport = "Selector(s) don't exist in css: " + strSelectors;
+                        objElem = objMissing.objElem;
+                        strSelectors = objMissing.strSelectors;
+                        strReport = "Selector(s) don't exist in css: " + strSelectors;
                         var intLine = objElem.line;
 
                         reporter.error(strReport, intLine, 0, self, event.raw);                    

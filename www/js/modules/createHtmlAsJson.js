@@ -11,7 +11,7 @@ var createHtmlAsJson = function(html, strMarkerHandle){
 
   var trim = function(str){
     return str.replace(/^\s\s*/, '').replace(/\s\s*$/, '');
-  }
+  };
 
   // Get children of each top element.
   // TODO: supply this regex to the function, to save redeclaring it.
