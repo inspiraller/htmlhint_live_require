@@ -19,7 +19,8 @@
             'id-unique': true,
             'src-not-empty': true,
             'attr-no-duplication': true,
-            'title-require': true
+            'title-require': true,
+            'alt-require': true
         },
         ruleCSSLint = {
                 "display-property-grouping": true,

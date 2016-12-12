@@ -26,7 +26,8 @@ var HTMLHint = (function (undefined) {
         'id-unique': true,
         'src-not-empty': true,
         'attr-no-duplication': true,
-        'title-require': true
+        'title-require': true,
+        'alt-require':true
     };
 
     HTMLHint.addRule = function(rule){
@@ -241,8 +242,62 @@ var HTMLParser = (function(undefined){
             return obj;
         },
 
+        recurseHtmlAsJson: function(arrHtmlJson, callback){                           
+            for(var i = 0, intLen = arrHtmlJson.length; i < intLen; ++i){                
+                var objElem = arrHtmlJson[i];
+
+                callback(objElem);  
+
+                if(objElem.children){
+                    this.recurseHtmlAsJson(objElem.children, callback);                    
+                }
+                
+            }                                    
+        },
+
         // parse html code
         parse: function(html){
+
+
+/*
+            var markers = {
+                strMarkerStart : '\u21A3',
+                strMarkerEnd : '\u20AA',
+                strMarkerHandle : '\u20A9',
+                strMarkerEndComment : '\u03C8'
+            };
+
+            //html = html.replace(/\&gt\;/g,'>');
+            //html = html.replace(/\&lt\;/g,'<');
+
+            var objHtmlWrapped = wrapTagPointers(html, markers);
+                        
+            if(objHtmlWrapped.isValid === true){
+
+                var strWrapped = objHtmlWrapped.strHtml;  
+
+//console.log('strWrapped = "' + strWrapped + '"');
+
+                var arrHtmlJson = createHtmlAsJson(strWrapped, markers.strMarkerHandle);
+
+
+                this.recurseHtmlAsJson(arrHtmlJson, function callback(objElem){
+                    console.log(objElem);
+                    
+                });
+
+
+
+            }else{
+                reportOnBadHTMLPairing(self, event, reporter,htmlWrapped, isErrorBadHtml);                                    
+            }
+
+
+            console.log('objHtmlWrapped = ', objHtmlWrapped);
+
+*/
+
+
 
             var self = this,
                 mapCdataTags = self._mapCdataTags;
@@ -371,6 +426,8 @@ var HTMLParser = (function(undefined){
                 }
             }
 
+            
+
         },
 
         // add event
@@ -476,6 +533,12 @@ HTMLHint.addRule({
     init: function(parser, reporter){
         var self = this;
         parser.addListener('tagstart', function(event){
+
+
+console.log('addRule tagStart - event = ', event);
+
+
+
             var tagName = event.tagName.toLowerCase(),
                 mapAttrs = parser.getMapAttrs(event.attrs),
                 col = event.col + tagName.length + 1,
@@ -689,6 +752,9 @@ HTMLHint.addRule({
         var strAllStyles = $('#styles').val();
         var strRegExcludeClasses =  '(\\.gr\\-1|\\.gr\\-2)+';
         var isExcludeBemModifier = true;
+        var isWarnMissingCssClasses = true;
+        var isErrorMultipleSameProps = true;
+        var isNeedsClassOnDivSpan = true;
         
 
         // RESTORE FOR BUILD  
@@ -761,11 +827,64 @@ HTMLHint.addRule({
 
         var strAllStyles = concatAllCssFiles(strStylesPaths);
         */
+
+        var reportOnCssClassesMissing = function(self, event, reporter, objReport, isWarnMissingCssClasses){
+            if(isWarnMissingCssClasses){
+                var arrSelectorsMissingFromCss = objReport.arrSelectorsMissingFromCss || [];
+                var i, objElem, strSelectors, strReport;
+                for(var i=0, intLen = arrSelectorsMissingFromCss.length; i < intLen; ++i){
+                    var objMissing = arrSelectorsMissingFromCss[i];
+
+                    objElem = objMissing.objElem;
+                    strSelectors = objMissing.strSelectors;
+                    strReport = "Selector(s) don't exist in css: " + strSelectors;
+                    var intLine = objElem.line;
+
+                    reporter.warn(strReport, intLine, 0, self, event.raw);                    
+                }  
+            }          
+        }
+
+        var reportOnMultipleClassesWithSameProps = function(self, event, reporter, objReport, isErrorMultipleSameProps){
+            if(isErrorMultipleSameProps){
+                var arrMultipleClassesSameProperties = objReport.arrMultipleClassesSameProperties || [];        
+                var i, objElem, strSelectors, strReport;
+
+                for(var i=0, intLen = arrMultipleClassesSameProperties.length; i < intLen; ++i){
+                    var objMultiple = arrMultipleClassesSameProperties[i];
+                    objElem = objMultiple.elem;
+                    var objMatchingSelectors = Object.keys(objMultiple.matching.selectors);
+                    strSelectors = objMatchingSelectors.join(',');
+                    var objMatchingProperties = Object.keys(objMultiple.matching.properties);
+                    var strProperties = objMatchingProperties.join(',');
+
+                    strReport = "Multiple selectors exist with same properties. selectors = " + strSelectors + '. Properties = ' + strProperties ;
+                    reporter.error(strReport, objElem.line, 0, self, event.raw);                    
+                }
+            }
+        }
+
+        var reportOnBadHTMLPairing = function(self, event, reporter, htmlWrapped, isErrorBadHtml){
+
+            if(isErrorBadHtml){
+
+                // capture tag pairing.
+                var intStartLine = htmlWrapped.intStartLine;
+                var intBadLine = htmlWrapped.intBadLine;
+                var strMsg = htmlWrapped.strMsg;
+
+                if(typeof intBadLine !== 'undefined'){
+                    reporter.error(strMsg, intBadLine, 0, self, event.raw);      
+                    reporter.error(strMsg, intStartLine, 0, self, event.raw); 
+                }            
+            }
+        }
+
+
         var allEvent = function(event) {
             if(event.type == 'start'){
 
                 var html = event.html;
-
                 var markers = {
                     strMarkerStart : '\u21A3',
                     strMarkerEnd : '\u20AA',
@@ -774,51 +893,17 @@ HTMLHint.addRule({
                 };
 
                 var htmlWrapped = wrapTagPointers(html, markers);
-
                           
                 if(htmlWrapped.isValid === true){
+
                     var strWrapped = htmlWrapped.strHtml;                    
                     var objReport = reportMultipleClassesWithSameProps(strWrapped, markers, strAllStyles, strRegExcludeClasses, isExcludeBemModifier);
 
-                    var arrMultipleClassesSameProperties = objReport.arrMultipleClassesSameProperties || [];
-                    var arrSelectorsMissingFromCss = objReport.arrSelectorsMissingFromCss || [];
-
-
-                    var i, objElem, strSelectors, strReport;
-
-                    for(var i=0, intLen = arrMultipleClassesSameProperties.length; i < intLen; ++i){
-                        var objMultiple = arrMultipleClassesSameProperties[i];
-                        objElem = objMultiple.elem;
-                        var objMatchingSelectors = Object.keys(objMultiple.matching.selectors);
-                        strSelectors = objMatchingSelectors.join(',');
-                        var objMatchingProperties = Object.keys(objMultiple.matching.properties);
-                        var strProperties = objMatchingProperties.join(',');
-
-                        strReport = "Multiple selectors exist with same properties. selectors = " + strSelectors + '. Properties = ' + strProperties ;
-                        reporter.error(strReport, objElem.line, 0, self, event.raw);                    
-                    }
-
-                    for(var i=0, intLen = arrSelectorsMissingFromCss.length; i < intLen; ++i){
-                        var objMissing = arrSelectorsMissingFromCss[i];
-
-                        objElem = objMissing.objElem;
-                        strSelectors = objMissing.strSelectors;
-                        strReport = "Selector(s) don't exist in css: " + strSelectors;
-                        var intLine = objElem.line;
-
-                        reporter.warn(strReport, intLine, 0, self, event.raw);                    
-                    }
+                    reportOnCssClassesMissing(self, event, reporter, objReport, isWarnMissingCssClasses);
+                    reportOnMultipleClassesWithSameProps(self, event, reporter, objReport, isErrorMultipleSameProps);
 
                 }else{
-                    // capture tag pairing.
-                    var intStartLine = htmlWrapped.intStartLine;
-                    var intBadLine = htmlWrapped.intBadLine;
-                    var strMsg = htmlWrapped.strMsg;
-
-                    if(typeof intBadLine !== 'undefined'){
-                        reporter.error(strMsg, intBadLine, 0, self, event.raw);      
-                        reporter.error(strMsg, intStartLine, 0, self, event.raw); 
-                    }
+                    reportOnBadHTMLPairing(self, event, reporter,htmlWrapped, isErrorBadHtml);
                                           
                 }
 

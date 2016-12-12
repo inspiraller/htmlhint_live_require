@@ -1,8 +1,9 @@
 var createHtmlAsJson = function(html, strMarkerHandle){
 
   var objParent = (arguments.length > 2)?arguments[2]:{};
-  var intLineNum = (arguments.length > 3)?arguments[3]:0;
-  
+  var index = (arguments.length > 3)?arguments[3]:0;
+  var strHtmlAll = (arguments.length > 4)?arguments[4]:html;
+
   var arrChildren = [];
 
 
@@ -12,6 +13,28 @@ var createHtmlAsJson = function(html, strMarkerHandle){
   var trim = function(str){
     return str.replace(/^\s\s*/, '').replace(/\s\s*$/, '');
   };
+
+
+  var getPos = function(strHtmlAll, index, strMarkerHandle){
+    var strUp = strHtmlAll.substring(0, index);
+
+    var intLine = strUp.split(/\n/).length;
+
+
+    //var intLastIndexOfLine = strUp.search(/(^|\n)[^\n]*$/);
+    var intLastIndexOfLine = strUp.lastIndexOf('\n') + 1;
+
+    var strCol = strUp.substr(intLastIndexOfLine);
+
+    strCol = strCol.replace(RegExp('\\' + strMarkerHandle + '\\d+ ','g'),'');  
+    var intCol = strCol.length + 1;
+
+    return {
+      line:intLine,
+      col:intCol
+    }
+  }
+
 
   // Get children of each top element.
   // TODO: supply this regex to the function, to save redeclaring it.
@@ -38,17 +61,21 @@ var createHtmlAsJson = function(html, strMarkerHandle){
         
         obj = {};
         
+        var intEachIndex = index + arrMatch.index;
         
-        //var intElemLineNum = intLineNum + arrMatch.index;
-        var intElemLineNum = intLineNum + (html.substring(0, arrMatch.index).split('\n').length - 1);
-        
-        var elem = arrMatch[3];                 
+        var elem = arrMatch[3];   
+
         var isSelfClosing = elem.lastIndexOf('/')!==-1 || false;
+
         var content = (!isSelfClosing)? arrMatch[5] :null;
         var attr = arrMatch[4] || false;
+     
 
         obj.elem = elem;
-        obj.line = intElemLineNum + 1;
+
+        var pos = getPos(strHtmlAll, intEachIndex, strMarkerHandle);
+        obj.line = pos.line;
+        obj.col = pos.col;
         
         //obj.isSelfClosing = isSelfClosing;                                     
         
@@ -72,7 +99,7 @@ var createHtmlAsJson = function(html, strMarkerHandle){
 
         if(content){
           content = content.substring(0, content.lastIndexOf('</'));
-          obj.children = createHtmlAsJson(content, strMarkerHandle, obj, intElemLineNum);
+          obj.children = createHtmlAsJson(content, strMarkerHandle, obj, intEachIndex + arrMatch[1].length, strHtmlAll);
           
         }  
         if(objParent.elem){
@@ -89,7 +116,11 @@ var createHtmlAsJson = function(html, strMarkerHandle){
 
              /* This method should create example:
 var json = [{
-  classes:'bodyclass',
+  elem:"body",
+  line:2,
+  attr:{
+    class:"elem1 elem2 elem3"
+  },
   children:[
     {
       h1:{

@@ -13,6 +13,7 @@ WrapTagPointers.prototype = {
 
     init:function(str, markers){
 
+
         str = this.fixQuotes(str);
 
         var strMarkerStart = markers.strMarkerStart;
@@ -23,14 +24,9 @@ WrapTagPointers.prototype = {
     //If contains html
         if(str.search(/[<>]/)!==-1){
 
-    //str = str.substring(0,100) + '<BIB>' + str.substr(100);
-
-            // remove comments
-            //str = str.replace(/-->/g,'¬');
-            //str = str.replace(/<\!--[^¬]*¬/g,'');
 
             // fix self closing
-            str = this.fixSelfClosing(str);
+            //str = this.fixSelfClosing(str);
 
             //loop all tags and wrap with markers
             //set markers
@@ -40,7 +36,6 @@ WrapTagPointers.prototype = {
             str = str.replace(/(<\/\w+([\s\:][^>]*)?>)/g,"$1"+strMarkerEnd);
 
             str = this.removePointersInComments(str, strMarkerStart, strMarkerEnd, strMarkerEndComment);
-
 
 
             //Loop through each wrapped tag and add a handle marker around it. Example:
