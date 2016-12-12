@@ -32,8 +32,8 @@ var createHtmlAsJson = function(html, strMarkerHandle){
     return {
       line:intLine,
       col:intCol
-    }
-  }
+    };
+  };
 
 
   // Get children of each top element.
