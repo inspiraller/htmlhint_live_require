@@ -4,6 +4,7 @@ var createHtmlAsJson = (typeof createHtmlAsJson!=='undefined')?createHtmlAsJson:
 var styleBlocks = (typeof styleBlocks!=='undefined')?styleBlocks:function styleBlocks(){};
 var styleBlocksFilter = (typeof styleBlocksFilter!=='undefined')?styleBlocksFilter:function styleBlocksFilter(){};
 
+
 var reportMultipleClassesWithSameProps  = function(strWrapped, markers, strAllStyles, strRegExcludeClasses, isExcludeBemModifier){
     var inst = new ReportMultipleClassesWithSameProps();
     return inst.init(strWrapped, markers, strAllStyles, strRegExcludeClasses, isExcludeBemModifier);
@@ -42,11 +43,14 @@ ReportMultipleClassesWithSameProps.prototype = {
             //console.log('##############################################################################')
             //console.log('recurseJson - elem = ', objElem.elem);  
 
-
             if(strClasses){
+             
+                objReport = this.reportMissingClasses(strAllStyles, strClasses, objElem, objReport);
+
                 var isMultipleClasses = strClasses.split(' ').length > 1;
+
                 if(isMultipleClasses){
-                    objReport = this.filterOutNonParents(strAllStyles, strClasses, objElem, strRegExcludeClasses, isExcludeBemModifier, objReport);
+                    objReport = this.filterOutNonParents(strAllStyles, strClasses, objElem, strRegExcludeClasses, isExcludeBemModifier, objStyles, objReport);
                 }
             }
             if(objElem.children){
@@ -55,7 +59,40 @@ ReportMultipleClassesWithSameProps.prototype = {
         }
         return objReport;
     },
-    filterOutNonParents:function(strAllStyles, strClasses, objElem, strRegExcludeClasses, isExcludeBemModifier, objReport){   
+    reportMissingClasses:function(strAllStyles, strClasses, objElem, objReport){
+
+        var strClassesCombined = '.' + strClasses.split(' ').join('.');
+        var objStyles = styleBlocks(strAllStyles, strClassesCombined);
+
+        var strSelectorsMissing = this.getMissingSelectors(strClasses, objStyles);
+
+        if(strSelectorsMissing){
+            if(!objReport.arrSelectorsMissingFromCss){
+                objReport.arrSelectorsMissingFromCss = [];
+            }
+            objReport.arrSelectorsMissingFromCss.push({
+                objElem:objElem,
+                strSelectors:strSelectorsMissing
+            });
+        }
+        return objReport;
+    },
+    getMissingSelectors:function(strClasses, objStyles){
+        var arrClasses = strClasses.split(' ');      
+        var strSelectorsMissing = '';
+        for(var i = 0, intLen = arrClasses.length; i < intLen; ++i){
+            var strClass = arrClasses[i];
+            if(typeof objStyles['.' + strClass] === 'undefined'){
+                if(strSelectorsMissing!==''){
+                    strSelectorsMissing+=',';
+                }
+                strSelectorsMissing+='.' + strClass;
+            }
+        }
+        return strSelectorsMissing;
+
+    },    
+    filterOutNonParents:function(strAllStyles, strClasses, objElem, strRegExcludeClasses, isExcludeBemModifier, objStyles, objReport){   
 
         var strClassesCombined = strClasses.replace(/(^|\s+)/g,'.');
 
@@ -66,21 +103,9 @@ ReportMultipleClassesWithSameProps.prototype = {
             strClasses = this.trim(strClasses);
         }
         
-        var objStyles = styleBlocks(strAllStyles, strClassesCombined);
         var isStyles = (Object.keys(objStyles).length > 0)?true:false;        
         var objStylesFiltered = (isStyles)?styleBlocksFilter(strClasses, objElem, objStyles, isExcludeBemModifier):{};
 
-
-        var strSelectorsMissing = this.getMissingSelectors(strClasses, objStyles);
-        if(strSelectorsMissing){
-            if(!objReport.arrSelectorsMissingFromCss){
-                objReport.arrSelectorsMissingFromCss = [];
-            }
-            objReport.arrSelectorsMissingFromCss.push({
-                objElem:objElem,
-                strSelectors:strSelectorsMissing
-            });
-        }
 
 
 //console.log('________________________________________');
@@ -100,21 +125,6 @@ ReportMultipleClassesWithSameProps.prototype = {
             });
         }
         return objReport;
-
-    },
-    getMissingSelectors:function(strClasses, objStyles){
-        var arrClasses = strClasses.split(' ');      
-        var strSelectorsMissing = '';
-        for(var i = 0, intLen = arrClasses.length; i < intLen; ++i){
-            var strClass = arrClasses[i];
-            if(typeof objStyles['.' + strClass] === 'undefined'){
-                if(strSelectorsMissing!==''){
-                    strSelectorsMissing+=',';
-                }
-                strSelectorsMissing+='.' + strClass;
-            }
-        }
-        return strSelectorsMissing;
 
     },
     compareProps:function(objStylesFiltered){
@@ -199,3 +209,4 @@ ReportMultipleClassesWithSameProps.prototype = {
         //return prop.replace(regFuzzy,'$1');
     }
 };
+
