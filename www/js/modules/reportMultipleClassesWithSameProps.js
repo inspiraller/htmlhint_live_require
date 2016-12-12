@@ -45,7 +45,9 @@ ReportMultipleClassesWithSameProps.prototype = {
 
             if(strClasses){
              
-                objReport = this.reportMissingClasses(strAllStyles, strClasses, objElem, objReport);
+                var strClassesCombined = '.' + strClasses.split(' ').join('.');
+                var objStyles = styleBlocks(strAllStyles, strClassesCombined);
+                objReport = this.reportMissingClasses(strAllStyles, strClasses, objElem, objStyles, objReport);
 
                 var isMultipleClasses = strClasses.split(' ').length > 1;
 
@@ -59,10 +61,8 @@ ReportMultipleClassesWithSameProps.prototype = {
         }
         return objReport;
     },
-    reportMissingClasses:function(strAllStyles, strClasses, objElem, objReport){
+    reportMissingClasses:function(strAllStyles, strClasses, objElem, objStyles, objReport){
 
-        var strClassesCombined = '.' + strClasses.split(' ').join('.');
-        var objStyles = styleBlocks(strAllStyles, strClassesCombined);
 
         var strSelectorsMissing = this.getMissingSelectors(strClasses, objStyles);
 
