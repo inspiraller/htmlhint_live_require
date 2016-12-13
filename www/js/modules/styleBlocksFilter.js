@@ -28,7 +28,7 @@ StyleBlocksFilter.prototype = {
 
 //console.log('#########################################');       
 //console.log('objElem = ', objElem);
-//console.log('elem = ', objElem.elem);
+//console.log('tagName = ', objElem.tagName);
 //console.log('strClasses= ', strClasses);    
 
 //console.log('strAllStyles = ', strAllStyles); 
@@ -218,7 +218,7 @@ StyleBlocksFilter.prototype = {
         // test if elem
         var strElem = objAdjoined.strElem;
 
-        if(strElem && strElem!=='' && objElem.elem !== strElem){         
+        if(strElem && strElem!=='' && objElem.tagName !== strElem){         
             return false;
         }
         var attr = objElem.attr || {};

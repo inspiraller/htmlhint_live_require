@@ -41,7 +41,7 @@ ReportMultipleClassesWithSameProps.prototype = {
             var strClasses = (attr)?attr.class:'';
 
             //console.log('##############################################################################')
-            //console.log('recurseJson - elem = ', objElem.elem);  
+            //console.log('recurseJson - elem = ', objElem.tagName);  
 
             if(strClasses){
              

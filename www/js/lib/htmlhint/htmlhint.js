@@ -16,19 +16,31 @@ var HTMLHint = (function (undefined) {
     HTMLHint.rules = {};
 
     //默认配置
-    HTMLHint.defaultRuleset = {
-        'tagname-lowercase': true,
-        'attr-lowercase': true,
-        'attr-value-double-quotes': true,
-        'doctype-first': true,
-        'tag-pair': true,
-        'spec-char-escape': true,
-        'id-unique': true,
-        'src-not-empty': true,
-        'attr-no-duplication': true,
-        'title-require': true,
-        'alt-require':true
-    };
+    HTMLHint.defaultRuleset = {            'alt-require' : true,            
+            'attr-lowercase': true,
+            'attr-no-duplication': true,
+            'attr-unsafe-chars': true,
+            'attr-value-double-quotes': true,
+            'attr-value-not-empty': true,
+            'doctype-first': true,
+            'doctype-html5': true,
+            'head-script-disabled': true,
+            'href-abs-or-rel': true,
+            'id-class-ad-disabled':true,
+            'id-class-value':true,
+            'id-unique':true,
+            'inline-script-disabled':true,
+            'inline-style-disabled':true,
+            'multiple-classes-same-property':true,
+            'space-tab-mixed-disabled':true,
+            'spec-char-escape': true,
+            'src-not-empty': true,
+            'style-disabled':true,
+            'tag-pair': true,   
+            'tag-self-close':true,
+            'tagname-lowercase': true,        
+            'title-require': true
+        };
 
     HTMLHint.addRule = function(rule){
         HTMLHint.rules[rule.id] = rule;
@@ -259,7 +271,7 @@ var HTMLParser = (function(undefined){
         parse: function(html){
 
 
-/*
+
             var markers = {
                 strMarkerStart : '\u21A3',
                 strMarkerEnd : '\u20AA',
@@ -282,7 +294,7 @@ var HTMLParser = (function(undefined){
 
 
                 this.recurseHtmlAsJson(arrHtmlJson, function callback(objElem){
-                    console.log(objElem);
+                    console.log('objElem = ',objElem);
                     
                 });
 
@@ -295,10 +307,10 @@ var HTMLParser = (function(undefined){
 
             console.log('objHtmlWrapped = ', objHtmlWrapped);
 
-*/
 
 
 
+/*
             var self = this,
                 mapCdataTags = self._mapCdataTags;
 
@@ -427,7 +439,7 @@ var HTMLParser = (function(undefined){
             }
 
             
-
+*/
         },
 
         // add event
@@ -522,204 +534,6 @@ if (typeof exports === 'object' && exports){
     exports.HTMLParser = HTMLParser;
 }
 
-/**
- * Copyright (c) 2015, Yanis Wang <yanis.wang@gmail.com>
- * Copyright (c) 2014, Takeshi Kurosawa <taken.spc@gmail.com>
- * MIT Licensed
- */
-HTMLHint.addRule({
-    id: 'alt-require',
-    description: 'The alt attribute of an <img> element must be present and alt attribute of area[href] and input[type=image] must have a value.',
-    init: function(parser, reporter){
-        var self = this;
-        parser.addListener('tagstart', function(event){
-
-
-console.log('addRule tagStart - event = ', event);
-
-
-
-            var tagName = event.tagName.toLowerCase(),
-                mapAttrs = parser.getMapAttrs(event.attrs),
-                col = event.col + tagName.length + 1,
-                selector;
-            if(tagName === 'img' && !('alt' in mapAttrs)){
-                reporter.warn('An alt attribute must be present on <img> elements.', event.line, col, self, event.raw);
-            }
-            else if((tagName === 'area' && 'href' in mapAttrs) ||
-                (tagName === 'input' && mapAttrs['type'] === 'image')){
-                if(!('alt' in mapAttrs) || mapAttrs['alt'] === ''){
-                    selector = tagName === 'area' ? 'area[href]' : 'input[type=image]';
-                    reporter.warn('The alt attribute of ' + selector + ' must have a value.', event.line, col, self, event.raw);
-                }
-            }
-        });
-    }
-});
-
-/**
- * Copyright (c) 2015, Yanis Wang <yanis.wang@gmail.com>
- * MIT Licensed
- */
-HTMLHint.addRule({
-    id: 'attr-lowercase',
-    description: 'All attribute names must be in lowercase.',
-    init: function(parser, reporter, options){
-        var self = this;
-        var exceptions = Array.isArray(options) ? options : [];
-        parser.addListener('tagstart', function(event){
-            var attrs = event.attrs,
-                attr,
-                col = event.col + event.tagName.length + 1;
-            for(var i=0, l=attrs.length;i<l;i++){
-                attr = attrs[i];
-                var attrName = attr.name;
-                if (exceptions.indexOf(attrName) === -1 && attrName !== attrName.toLowerCase()){
-                    reporter.error('The attribute name of [ '+attrName+' ] must be in lowercase.', event.line, col + attr.index, self, attr.raw);
-                }
-            }
-        });
-    }
-});
-
-/**
- * Copyright (c) 2014, Yanis Wang <yanis.wang@gmail.com>
- * MIT Licensed
- */
-HTMLHint.addRule({
-    id: 'attr-no-duplication',
-    description: 'Elements cannot have duplicate attributes.',
-    init: function(parser, reporter){
-        var self = this;
-        parser.addListener('tagstart', function(event){
-            var attrs = event.attrs;
-            var attr;
-            var attrName;
-            var col = event.col + event.tagName.length + 1;
-
-            var mapAttrName = {};
-            for(var i=0, l=attrs.length;i<l;i++){
-                attr = attrs[i];
-                attrName = attr.name;
-                if(mapAttrName[attrName] === true){
-                    reporter.error('Duplicate of attribute name [ '+attr.name+' ] was found.', event.line, col + attr.index, self, attr.raw);
-                }
-                mapAttrName[attrName] = true;
-            }
-        });
-    }
-});
-/**
- * Copyright (c) 2014, Yanis Wang <yanis.wang@gmail.com>
- * MIT Licensed
- */
-HTMLHint.addRule({
-    id: 'attr-unsafe-chars',
-    description: 'Attribute values cannot contain unsafe chars.',
-    init: function(parser, reporter){
-        var self = this;
-        parser.addListener('tagstart', function(event){
-            var attrs = event.attrs,
-                attr,
-                col = event.col + event.tagName.length + 1;
-            // exclude \x09(\t), \x0a(\r), \x0d(\n)
-            var regUnsafe = /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f-\u009f\u00ad\u0600-\u0604\u070f\u17b4\u17b5\u200c-\u200f\u2028-\u202f\u2060-\u206f\ufeff\ufff0-\uffff]/;
-            var match;
-            for(var i=0, l=attrs.length;i<l;i++){
-                attr = attrs[i];
-                match = attr.value.match(regUnsafe);
-                if(match !== null){
-                    var unsafeCode = escape(match[0]).replace(/%u/, '\\u').replace(/%/, '\\x');
-                    reporter.warn('The value of attribute [ '+attr.name+' ] cannot contain an unsafe char [ ' + unsafeCode + ' ].', event.line, col + attr.index, self, attr.raw);
-                }
-            }
-        });
-    }
-});
-
-/**
- * Copyright (c) 2015, Yanis Wang <yanis.wang@gmail.com>
- * MIT Licensed
- */
-HTMLHint.addRule({
-    id: 'attr-value-double-quotes',
-    description: 'Attribute values must be in double quotes.',
-    init: function(parser, reporter){
-        var self = this;
-        parser.addListener('tagstart', function(event){
-            var attrs = event.attrs,
-                attr,
-                col = event.col + event.tagName.length + 1;
-            for(var i=0, l=attrs.length;i<l;i++){
-                attr = attrs[i];
-                if((attr.value !== '' && attr.quote !== '"') ||
-                    (attr.value === '' && attr.quote === "'")){
-                    reporter.error('The value of attribute [ '+attr.name+' ] must be in double quotes.', event.line, col + attr.index, self, attr.raw);
-                }
-            }
-        });
-    }
-});
-/**
- * Copyright (c) 2015, Yanis Wang <yanis.wang@gmail.com>
- * MIT Licensed
- */
-HTMLHint.addRule({
-    id: 'attr-value-not-empty',
-    description: 'All attributes must have values.',
-    init: function(parser, reporter){
-        var self = this;
-        parser.addListener('tagstart', function(event){
-            var attrs = event.attrs,
-                attr,
-                col = event.col + event.tagName.length + 1;
-            for(var i=0, l=attrs.length;i<l;i++){
-                attr = attrs[i];
-                if(attr.quote === '' && attr.value === ''){
-                    reporter.warn('The attribute [ '+attr.name+' ] must have a value.', event.line, col + attr.index, self, attr.raw);
-                }
-            }
-        });
-    }
-});
-/**
- * Copyright (c) 2015, Yanis Wang <yanis.wang@gmail.com>
- * MIT Licensed
- */
-HTMLHint.addRule({
-    id: 'csslint',
-    description: 'Scan css with csslint.',
-    init: function(parser, reporter, options){
-        var self = this;
-        parser.addListener('cdata', function(event){
-            if(event.tagName.toLowerCase() === 'style'){
-
-                var cssVerify;
-
-                if(typeof exports === 'object' && require){
-                    cssVerify = require("csslint").CSSLint.verify;
-                }
-                else{
-                    cssVerify = CSSLint.verify;
-                }
-
-                if(options !== undefined){
-                    var styleLine = event.line - 1,
-                        styleCol = event.col - 1;
-                    try{
-                        var messages = cssVerify(event.raw, options).messages;
-                        messages.forEach(function(error){
-                            var line = error.line;
-                            reporter[error.type==='warning'?'warn':'error']('['+error.rule.id+'] '+error.message, styleLine + line, (line === 1 ? styleCol : 0) + error.col, self, error.evidence);
-                        });
-                    }
-                    catch(e){}
-                }
-
-            }
-        });
-    }
-});
 
 
 
@@ -733,12 +547,25 @@ var wrapTagPointers = (typeof wrapTagPointers!=='undefined')?wrapTagPointers:fun
 var fs = require('fs');
 */
 
+
+
+        
 HTMLHint.addRule({
     id: 'multiple-classes-same-property',
     description: 'Prevent classes with the same properties',
     init: function multipleClases(parser, reporter, options) {
 
         var self = this;
+
+
+        var strAllStyles = $('#styles').val();
+        var strRegExcludeClasses =  '(\\.gr\\-1|\\.gr\\-2)+';
+        var isExcludeBemModifier = true;
+        var isWarnMissingCssClasses = true;
+        var isErrorMultipleSameProps = true;
+        var isNeedsClassOnDivSpan = true;
+        var isErrorBadHtml = false;
+
 
         // REMOVE FOR BUILD            
         var reporter = {
@@ -749,13 +576,6 @@ HTMLHint.addRule({
                 console.log(str);
             }
         }
-        var strAllStyles = $('#styles').val();
-        var strRegExcludeClasses =  '(\\.gr\\-1|\\.gr\\-2)+';
-        var isExcludeBemModifier = true;
-        var isWarnMissingCssClasses = true;
-        var isErrorMultipleSameProps = true;
-        var isNeedsClassOnDivSpan = true;
-        
 
         // RESTORE FOR BUILD  
         //      
@@ -914,6 +734,206 @@ HTMLHint.addRule({
     }
 });
 
+
+/**
+ * Copyright (c) 2015, Yanis Wang <yanis.wang@gmail.com>
+ * Copyright (c) 2014, Takeshi Kurosawa <taken.spc@gmail.com>
+ * MIT Licensed
+ */
+HTMLHint.addRule({
+    id: 'alt-require',
+    description: 'The alt attribute of an <img> element must be present and alt attribute of area[href] and input[type=image] must have a value.',
+    init: function(parser, reporter){
+        var self = this;
+        parser.addListener('tagstart', function(event){
+
+
+            var tagName = event.tagName.toLowerCase(),
+                mapAttrs = parser.getMapAttrs(event.attrs),
+                col = event.col + tagName.length + 1,
+                selector;
+            if(tagName === 'img' && !('alt' in mapAttrs)){
+                reporter.warn('An alt attribute must be present on <img> elements.', event.line, col, self, event.raw);
+            }
+            else if((tagName === 'area' && 'href' in mapAttrs) ||
+                (tagName === 'input' && mapAttrs['type'] === 'image')){
+                if(!('alt' in mapAttrs) || mapAttrs['alt'] === ''){
+                    selector = tagName === 'area' ? 'area[href]' : 'input[type=image]';
+                    reporter.warn('The alt attribute of ' + selector + ' must have a value.', event.line, col, self, event.raw);
+                }
+            }
+        });
+    }
+});
+
+/**
+ * Copyright (c) 2015, Yanis Wang <yanis.wang@gmail.com>
+ * MIT Licensed
+ */
+HTMLHint.addRule({
+    id: 'attr-lowercase',
+    description: 'All attribute names must be in lowercase.',
+    init: function(parser, reporter, options){
+        var self = this;
+        var exceptions = Array.isArray(options) ? options : [];
+        parser.addListener('tagstart', function(event){
+            var attrs = event.attrs,
+                attr,
+                col = event.col + event.tagName.length + 1;
+            for(var i=0, l=attrs.length;i<l;i++){
+                attr = attrs[i];
+                var attrName = attr.name;
+                if (exceptions.indexOf(attrName) === -1 && attrName !== attrName.toLowerCase()){
+                    reporter.error('The attribute name of [ '+attrName+' ] must be in lowercase.', event.line, col + attr.index, self, attr.raw);
+                }
+            }
+        });
+    }
+});
+
+/**
+ * Copyright (c) 2014, Yanis Wang <yanis.wang@gmail.com>
+ * MIT Licensed
+ */
+HTMLHint.addRule({
+    id: 'attr-no-duplication',
+    description: 'Elements cannot have duplicate attributes.',
+    init: function(parser, reporter){
+        var self = this;
+        parser.addListener('tagstart', function(event){
+            var attrs = event.attrs;
+            var attr;
+            var attrName;
+            var col = event.col + event.tagName.length + 1;
+
+            var mapAttrName = {};
+            for(var i=0, l=attrs.length;i<l;i++){
+                attr = attrs[i];
+                attrName = attr.name;
+                if(mapAttrName[attrName] === true){
+                    reporter.error('Duplicate of attribute name [ '+attr.name+' ] was found.', event.line, col + attr.index, self, attr.raw);
+                }
+                mapAttrName[attrName] = true;
+            }
+        });
+    }
+});
+/**
+ * Copyright (c) 2014, Yanis Wang <yanis.wang@gmail.com>
+ * MIT Licensed
+ */
+HTMLHint.addRule({
+    id: 'attr-unsafe-chars',
+    description: 'Attribute values cannot contain unsafe chars.',
+    init: function(parser, reporter){
+        var self = this;
+        parser.addListener('tagstart', function(event){
+            var attrs = event.attrs,
+                attr,
+                col = event.col + event.tagName.length + 1;
+            // exclude \x09(\t), \x0a(\r), \x0d(\n)
+            var regUnsafe = /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f-\u009f\u00ad\u0600-\u0604\u070f\u17b4\u17b5\u200c-\u200f\u2028-\u202f\u2060-\u206f\ufeff\ufff0-\uffff]/;
+            var match;
+            for(var i=0, l=attrs.length;i<l;i++){
+                attr = attrs[i];
+                match = attr.value.match(regUnsafe);
+                if(match !== null){
+                    var unsafeCode = escape(match[0]).replace(/%u/, '\\u').replace(/%/, '\\x');
+                    reporter.warn('The value of attribute [ '+attr.name+' ] cannot contain an unsafe char [ ' + unsafeCode + ' ].', event.line, col + attr.index, self, attr.raw);
+                }
+            }
+        });
+    }
+});
+
+/**
+ * Copyright (c) 2015, Yanis Wang <yanis.wang@gmail.com>
+ * MIT Licensed
+ */
+HTMLHint.addRule({
+    id: 'attr-value-double-quotes',
+    description: 'Attribute values must be in double quotes.',
+    init: function(parser, reporter){
+        var self = this;
+        parser.addListener('tagstart', function(event){
+            var attrs = event.attrs,
+                attr,
+                col = event.col + event.tagName.length + 1;
+            for(var i=0, l=attrs.length;i<l;i++){
+                attr = attrs[i];
+                if((attr.value !== '' && attr.quote !== '"') ||
+                    (attr.value === '' && attr.quote === "'")){
+                    reporter.error('The value of attribute [ '+attr.name+' ] must be in double quotes.', event.line, col + attr.index, self, attr.raw);
+                }
+            }
+        });
+    }
+});
+/**
+ * Copyright (c) 2015, Yanis Wang <yanis.wang@gmail.com>
+ * MIT Licensed
+ */
+HTMLHint.addRule({
+    id: 'attr-value-not-empty',
+    description: 'All attributes must have values.',
+    init: function(parser, reporter){
+        var self = this;
+        parser.addListener('tagstart', function(event){
+            var attrs = event.attrs,
+                attr,
+                col = event.col + event.tagName.length + 1;
+            for(var i=0, l=attrs.length;i<l;i++){
+                attr = attrs[i];
+                if(attr.quote === '' && attr.value === ''){
+                    reporter.warn('The attribute [ '+attr.name+' ] must have a value.', event.line, col + attr.index, self, attr.raw);
+                }
+            }
+        });
+    }
+});
+/**
+ * Copyright (c) 2015, Yanis Wang <yanis.wang@gmail.com>
+ * MIT Licensed
+ */
+HTMLHint.addRule({
+    id: 'csslint',
+    description: 'Scan css with csslint.',
+    init: function(parser, reporter, options){
+        var self = this;
+        parser.addListener('cdata', function(event){
+
+
+
+            if(event.tagName.toLowerCase() === 'style'){
+
+                var cssVerify;
+
+                if(typeof exports === 'object' && require){
+                    cssVerify = require("csslint").CSSLint.verify;
+                }
+                else{
+                    cssVerify = CSSLint.verify;
+                }
+
+                if(options !== undefined){
+                    var styleLine = event.line - 1,
+                        styleCol = event.col - 1;
+                    try{
+                        var messages = cssVerify(event.raw, options).messages;
+                        messages.forEach(function(error){
+                            var line = error.line;
+                            reporter[error.type==='warning'?'warn':'error']('['+error.rule.id+'] '+error.message, styleLine + line, (line === 1 ? styleCol : 0) + error.col, self, error.evidence);
+                        });
+                    }
+                    catch(e){}
+                }
+
+            }
+        });
+    }
+});
+
+
 /**
  * Copyright (c) 2015, Yanis Wang <yanis.wang@gmail.com>
  * MIT Licensed
@@ -922,9 +942,22 @@ HTMLHint.addRule({
     id: 'doctype-html5',
     description: 'Invalid doctype. Use: "<!DOCTYPE html>"',
     init: function(parser, reporter){
+
+        // REMOVE FOR BUILD            
+        var reporter = {
+            error:function(str, intLine){
+                console.log(str);
+            },
+            warn:function(str, intLine){
+                console.log(str);
+            }
+        }
+
         var self = this;
         function onComment(event){
+
             if(event.long === false && event.content.toLowerCase() !== 'doctype html'){
+            
                 reporter.warn('Invalid doctype. Use: "<!DOCTYPE html>"', event.line, event.col, self, event.raw);
             }
         }
@@ -936,6 +969,36 @@ HTMLHint.addRule({
         parser.addListener('tagstart', onTagStart);
     }
 });
+
+HTMLHint.addRule({
+    id: 'doctype-first',
+    description: 'Doctype must be declared first.',
+    init: function(parser, reporter){
+
+        // REMOVE FOR BUILD            
+        var reporter = {
+            error:function(str, intLine){
+                console.log(str);
+            },
+            warn:function(str, intLine){
+                console.log(str);
+            }
+        }
+
+                
+        var self = this;
+        var allEvent = function(event){
+          
+            if(event.type === 'start' || (event.type === 'text' && /^\s*$/.test(event.raw)) || (event.type !== 'comment' && event.long === false) || /^DOCTYPE\s+/i.test(event.content) === false){
+               
+                reporter.error('Doctype must be declared first.', event.line, event.col, self, event.raw);
+            }
+            parser.removeListener('all', allEvent);
+        };
+        parser.addListener('all', allEvent);
+    }
+});
+
 /**
  * Copyright (c) 2015, Yanis Wang <yanis.wang@gmail.com>
  * MIT Licensed
@@ -961,6 +1024,7 @@ HTMLHint.addRule({
             }
         }
         function onTagEnd(event){
+           
             if(event.tagName.toLowerCase() === 'head'){
                 parser.removeListener('tagstart', onTagStart);
                 parser.removeListener('tagend', onTagEnd);
@@ -1246,6 +1310,7 @@ HTMLHint.addRule({
             var raw = event.raw;
             var reMixed = /(^|\r?\n)([ \t]+)/g;
             var match;
+           
             while((match = reMixed.exec(raw))){
                 var fixedPos = parser.fixPos(event, match.index + match[1].length);
                 if(fixedPos.col !== 1){
@@ -1383,6 +1448,8 @@ HTMLHint.addRule({
             }
         });
         parser.addListener('end', function(event){
+
+console.log('end =- ', event);            
             var arrTags = [];
             for(var i=stack.length-1;i>=0;i--){
                 arrTags.push('</'+stack[i].tagName+'>');
