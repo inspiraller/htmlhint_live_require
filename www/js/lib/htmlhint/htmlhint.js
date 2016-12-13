@@ -271,7 +271,10 @@ var HTMLParser = (function(undefined){
         parse: function(html){
 
 
+
             var self = this;
+
+            this.parseComments(html);
 
             var markers = {
                 strMarkerStart : '\u21A3',
@@ -290,16 +293,23 @@ var HTMLParser = (function(undefined){
                 var strWrapped = objHtmlWrapped.strHtml;  
 
 //console.log('strWrapped = "' + strWrapped + '"');
+                
 
                 var arrHtmlJson = createHtmlAsJson(strWrapped, markers.strMarkerHandle);
                 this.recurseHtmlAsJson(arrHtmlJson, function callback(objElem){                    
                     self.fire(objElem.type, objElem);
                 });
 
-            }else{
-                reportOnBadHTMLPairing(self, event, reporter,htmlWrapped, isErrorBadHtml);                 
-            }
+            }else{   
 
+                self.fire(
+                    'tag-pair-broken',{
+                        objHtmlWrapped:objHtmlWrapped,
+                        html:html
+                    }
+                    
+                );
+            }
 
 
 
@@ -431,9 +441,49 @@ var HTMLParser = (function(undefined){
                     lastLineIndex = pos + regLine.lastIndex;
                 }
             }
-
-            
 */
+            
+        },
+        getPos: function(strHtmlAll, index){
+            var strUp = strHtmlAll.substring(0, index);
+            var intLine = strUp.split(/\n/).length;
+            var intLastIndexOfLine = strUp.lastIndexOf('\n') + 1;
+            var strCol = strUp.substr(intLastIndexOfLine);
+            var intCol = strCol.length + 1;
+            return {
+              line:intLine,
+              col:intCol
+            };
+        },    
+        parseComments:function(html){
+            var self = this;
+            var reg = /(<\!([^>]*)>)/g;
+            var arrMatch = null;
+            do{
+                arrMatch = reg.exec(html);                             
+                if(arrMatch){
+                    var index = arrMatch.index;
+                    var pos = this.getPos(html, index);
+
+                    self.fire('comment', {
+                        col:pos.col,
+                        content:arrMatch[2],
+                        line:pos.line,
+                        long:false,
+                        pos:index,
+                        raw:arrMatch[0]
+                    });
+                }
+            }while(arrMatch);
+/*
+            self.fire('comment', {
+                col:1,
+                content:"sd",
+                line:1,
+                long:false,
+                pos:0,
+                raw:"<!sd>"
+            });*/
         },
 
         // add event
@@ -718,6 +768,8 @@ HTMLHint.addRule({
 
                 }else{
                     reportOnBadHTMLPairing(self, event, reporter,htmlWrapped, isErrorBadHtml);
+
+
                                           
                 }
 
@@ -741,18 +793,11 @@ HTMLHint.addRule({
         var self = this;
         parser.addListener('tagstart', function(event){
 
-
-console.log('event = ', event);
-
             var tagName = event.tagName.toLowerCase(),
                 mapAttrs = parser.getMapAttrs(event.attrs),
                 col = event.col + tagName.length + 1,
                 selector;
-
-//console.log('##############################################');
-//console.log('attr = ', event.attrs);
-//console.log('mapAttrs = ', mapAttrs);                
-
+               
             if(tagName === 'img' && !('alt' in mapAttrs)){
                 reporter.warn('An alt attribute must be present on <img> elements.', event.line, col, self, event.raw);
             }
@@ -781,9 +826,12 @@ HTMLHint.addRule({
             var attrs = event.attrs,
                 attr,
                 col = event.col + event.tagName.length + 1;
+               
+
             for(var i=0, l=attrs.length;i<l;i++){
                 attr = attrs[i];
-                var attrName = attr.name;
+                var attrName = attr.name;           
+
                 if (exceptions.indexOf(attrName) === -1 && attrName !== attrName.toLowerCase()){
                     reporter.error('The attribute name of [ '+attrName+' ] must be in lowercase.', event.line, col + attr.index, self, attr.raw);
                 }
@@ -971,6 +1019,44 @@ HTMLHint.addRule({
     }
 });
 
+
+/**
+ * Copyright (c) 2015, Yanis Wang <yanis.wang@gmail.com>
+ * MIT Licensed
+ */
+HTMLHint.addRule({
+    id: 'doctype-first',
+    description: 'Doctype must be declared first.',
+    init: function(parser, reporter){
+
+        // REMOVE FOR BUILD            
+        var reporter = {
+            error:function(str, intLine){
+                console.log(str);
+            },
+            warn:function(str, intLine){
+                console.log(str);
+            }
+        }
+
+
+        var self = this;
+        var allEvent = function(event){
+            if(event.type === 'start' || (event.type === 'text' && /^\s*$/.test(event.raw))){
+                return;
+            }
+            if((event.type !== 'comment' && event.long === false) || /^DOCTYPE\s+/i.test(event.content) === false){
+
+console.log('event = ', event);
+
+                reporter.error('Doctype must be declared first.', event.line, event.col, self, event.raw);
+            }
+            parser.removeListener('all', allEvent);
+        };
+        parser.addListener('all', allEvent);
+    }
+});
+/*
 HTMLHint.addRule({
     id: 'doctype-first',
     description: 'Doctype must be declared first.',
@@ -992,6 +1078,8 @@ HTMLHint.addRule({
           
             if(event.type === 'start' || (event.type === 'text' && /^\s*$/.test(event.raw)) || (event.type !== 'comment' && event.long === false) || /^DOCTYPE\s+/i.test(event.content) === false){
                
+console.log('event = ', event);
+
                 reporter.error('Doctype must be declared first.', event.line, event.col, self, event.raw);
             }
             parser.removeListener('all', allEvent);
@@ -999,7 +1087,7 @@ HTMLHint.addRule({
         parser.addListener('all', allEvent);
     }
 });
-
+*/
 /**
  * Copyright (c) 2015, Yanis Wang <yanis.wang@gmail.com>
  * MIT Licensed
@@ -1408,57 +1496,39 @@ HTMLHint.addRule({
  * Copyright (c) 2015, Yanis Wang <yanis.wang@gmail.com>
  * MIT Licensed
  */
+ // TODO - rewrite tag-pair
 HTMLHint.addRule({
     id: 'tag-pair',
     description: 'Tag must be paired.',
     init: function(parser, reporter){
-        var self = this;
-        var stack=[],
-            mapEmptyTags = parser.makeMap("area,base,basefont,br,col,frame,hr,img,input,isindex,link,meta,param,embed,track,command,source,keygen,wbr");//HTML 4.01 + HTML 5
-        parser.addListener('tagstart', function(event){
-            var tagName = event.tagName.toLowerCase();
-            if (mapEmptyTags[tagName] === undefined && !event.close){
-                stack.push({
-                    tagName: tagName,
-                    line: event.line,
-                    raw: event.raw
-                });
-            }
-        });
-        parser.addListener('tagend', function(event){
-            var tagName = event.tagName.toLowerCase();
-            //向上寻找匹配的开始标签
-            for(var pos = stack.length-1;pos >= 0; pos--){
-                if(stack[pos].tagName === tagName){
-                    break;
-                }
-            }
-            if(pos >= 0){
-                var arrTags = [];
-                for(var i=stack.length-1;i>pos;i--){
-                    arrTags.push('</'+stack[i].tagName+'>');
-                }
-                if(arrTags.length > 0){
-                    var lastEvent = stack[stack.length-1];
-                    reporter.error('Tag must be paired, missing: [ '+ arrTags.join('') + ' ], start tag match failed [ ' + lastEvent.raw + ' ] on line ' + lastEvent.line + '.', event.line, event.col, self, event.raw);
-                }
-                stack.length=pos;
-            }
-            else{
-                reporter.error('Tag must be paired, no start tag: [ ' + event.raw + ' ]', event.line, event.col, self, event.raw);
-            }
-        });
-        parser.addListener('end', function(event){
 
-console.log('end =- ', event);            
-            var arrTags = [];
-            for(var i=stack.length-1;i>=0;i--){
-                arrTags.push('</'+stack[i].tagName+'>');
-            }
-            if(arrTags.length > 0){
-                var lastEvent = stack[stack.length-1];
-                reporter.error('Tag must be paired, missing: [ '+ arrTags.join('') + ' ], open tag match failed [ ' + lastEvent.raw + ' ] on line ' + lastEvent.line + '.', event.line, event.col, self, '');
-            }
+
+
+// REMOVE FOR BUILD
+reporter = {
+    error:function(str, intLine){
+        console.log(str);
+    },
+    warn:function(str, intLine){
+        console.log(str);
+    }
+}
+
+        var self = this;
+        parser.addListener('tag-pair-broken', function(event){
+
+            var objHtmlWrapped = event.objHtmlWrapped;
+            var html = event.html;
+
+            // capture tag pairing.
+            var intStartLine = objHtmlWrapped.intStartLine;
+            var intBadLine = objHtmlWrapped.intBadLine;
+            var strMsg = objHtmlWrapped.strMsg;
+
+            if(typeof intBadLine !== 'undefined'){                   
+                //reporter.error(strMsg, intBadLine, 0, self, html);      
+                reporter.error(strMsg, intStartLine, 0, self, html); 
+            }  
         });
     }
 });

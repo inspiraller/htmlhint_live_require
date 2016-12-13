@@ -108,15 +108,20 @@ CreateHtmlAsJson.prototype = {
     if(attr){
       var arrAttr;
          
-      var regAttr1 = /\s([^\=<>\s\'\"]+)\=\"([^\"]*)\"/g;
+      var regAttr1 = /\s([^\=<>\s\'\"]+)\=\"([^\"]*)(\")/g;
       do{
         arrAttr = regAttr1.exec(attr);
         if(arrAttr){
           var key = this.trim(arrAttr[1]);
           var val = this.trim(arrAttr[2]);
-          var objAttr = {};
-          objAttr[key] = val;
-          obj.attrs.push(objAttr);
+
+          obj.attrs.push({
+            index: regAttr1.index,
+            name: key,
+            value: val,
+            quote: arrAttr[3],
+            raw: arrAttr[0]
+          });
         }         
       }while(arrAttr);
     }
