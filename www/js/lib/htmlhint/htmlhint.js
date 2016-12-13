@@ -271,6 +271,7 @@ var HTMLParser = (function(undefined){
         parse: function(html){
 
 
+            var self = this;
 
             var markers = {
                 strMarkerStart : '\u21A3',
@@ -291,21 +292,14 @@ var HTMLParser = (function(undefined){
 //console.log('strWrapped = "' + strWrapped + '"');
 
                 var arrHtmlJson = createHtmlAsJson(strWrapped, markers.strMarkerHandle);
-
-
-                this.recurseHtmlAsJson(arrHtmlJson, function callback(objElem){
-                    console.log('objElem = ',objElem);
-                    
+                this.recurseHtmlAsJson(arrHtmlJson, function callback(objElem){                    
+                    self.fire(objElem.type, objElem);
                 });
 
-
-
             }else{
-                reportOnBadHTMLPairing(self, event, reporter,htmlWrapped, isErrorBadHtml);                                    
+                reportOnBadHTMLPairing(self, event, reporter,htmlWrapped, isErrorBadHtml);                 
             }
 
-
-            console.log('objHtmlWrapped = ', objHtmlWrapped);
 
 
 
@@ -748,10 +742,17 @@ HTMLHint.addRule({
         parser.addListener('tagstart', function(event){
 
 
+console.log('event = ', event);
+
             var tagName = event.tagName.toLowerCase(),
                 mapAttrs = parser.getMapAttrs(event.attrs),
                 col = event.col + tagName.length + 1,
                 selector;
+
+//console.log('##############################################');
+//console.log('attr = ', event.attrs);
+//console.log('mapAttrs = ', mapAttrs);                
+
             if(tagName === 'img' && !('alt' in mapAttrs)){
                 reporter.warn('An alt attribute must be present on <img> elements.', event.line, col, self, event.raw);
             }

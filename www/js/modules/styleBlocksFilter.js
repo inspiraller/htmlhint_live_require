@@ -213,6 +213,15 @@ StyleBlocksFilter.prototype = {
         }     
         return objAdjoined;
     }, 
+    getMapAttrs: function(arrAttrs){
+        var mapAttrs = {},
+            attr;
+        for(var i=0,l=arrAttrs.length;i<l;i++){
+            attr = arrAttrs[i];
+            mapAttrs[attr.name] = attr.value;
+        }
+        return mapAttrs;
+    },    
     matchAdjoinedOnParent:function(objElem, objAdjoined){
 
         // test if elem
@@ -221,7 +230,9 @@ StyleBlocksFilter.prototype = {
         if(strElem && strElem!=='' && objElem.tagName !== strElem){         
             return false;
         }
-        var attr = objElem.attr || {};
+        var arrAttrs = objElem.attr;
+
+        var attr = (arrAttrs && arrAttrs.length)?this.getMapAttrs(arrAttrs):{};
 
         // test if id
         var strId = objAdjoined.strId;

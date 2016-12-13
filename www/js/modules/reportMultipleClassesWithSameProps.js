@@ -31,13 +31,22 @@ ReportMultipleClassesWithSameProps.prototype = {
         return arrHtmlJson;
         
     },
-
+    getMapAttrs: function(arrAttrs){
+        var mapAttrs = {},
+            attr;
+        for(var i=0,l=arrAttrs.length;i<l;i++){
+            attr = arrAttrs[i];
+            mapAttrs[attr.name] = attr.value;
+        }
+        return mapAttrs;
+    },
     recurseJson:function(arrHtmlJson, strAllStyles, strRegExcludeClasses, isExcludeBemModifier){//, objReport
         var objReport = (arguments.length > 4)?arguments[4]:[];
         
         for(var i = 0, intLen = arrHtmlJson.length; i < intLen; ++i){
             var objElem = arrHtmlJson[i];
-            var attr = objElem.attr;
+            var arrAttrs = objElem.attrs;
+            var attr = (arrAttrs && arrAttrs.length)?this.getMapAttrs(arrAttrs):'';
             var strClasses = (attr)?attr.class:'';
 
             //console.log('##############################################################################')

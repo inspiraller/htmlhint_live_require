@@ -47,8 +47,6 @@ CreateHtmlAsJson.prototype = {
 
         if(arrMatch){
                          
-
-
           obj = {};
           
           var intEachIndex = index + arrMatch.index;      
@@ -106,25 +104,22 @@ CreateHtmlAsJson.prototype = {
     return obj;
   },
   setAttr:function(obj, attr){
+    obj.attrs = [];   
     if(attr){
       var arrAttr;
-      obj.attr = {};
-      
+         
       var regAttr1 = /\s([^\=<>\s\'\"]+)\=\"([^\"]*)\"/g;
-
-
       do{
         arrAttr = regAttr1.exec(attr);
         if(arrAttr){
-          var key = arrAttr[1];
-          var val = arrAttr[2];
-          val = this.trim(val);   
-          key = this.trim(key);            
-          obj.attr[key] = val; 
+          var key = this.trim(arrAttr[1]);
+          var val = this.trim(arrAttr[2]);
+          var objAttr = {};
+          objAttr[key] = val;
+          obj.attrs.push(objAttr);
         }         
       }while(arrAttr);
     }
-
     return obj;
   },
   setProps:function(obj, strType, index, pos, strRaw){
