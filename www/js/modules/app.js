@@ -190,8 +190,13 @@ define([
         //var code = editor.getValue();
         var code = document.getElementById('editor').value;
 
+
+
         var messages = HTMLHint.verify(code, ruleSets);
+
         var errors = [], message;
+
+
         for(var i=0, l=messages.length;i<l;i++){
             message = messages[i];
             errors.push({

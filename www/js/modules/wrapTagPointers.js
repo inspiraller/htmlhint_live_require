@@ -32,7 +32,7 @@ WrapTagPointers.prototype = {
             //set markers
             //convert:     <p></p>
             //to:        �<p></p>`
-            str = str.replace(/(<\w+([\s\:][^>]*[^\/])?>)/g, strMarkerStart + "$1");
+            str = str.replace(/(<\w+(\s+|[\s\:][^>]*[^\/])?>)/g, strMarkerStart + "$1");
             str = str.replace(/(<\/\w+([\s\:][^>]*)?>)/g,"$1"+strMarkerEnd);
 
             str = this.removePointersInComments(str, strMarkerStart, strMarkerEnd, strMarkerEndComment);
@@ -59,7 +59,9 @@ WrapTagPointers.prototype = {
             // Wrap collapsed/self closing tags
             str = str.replace(/(<[^>]*\/>)/g,fnReplace);
              
-//console.log('str = ', str);             
+            //console.log('after - str = ', str);
+
+
             return this.testBadHtml(str, strMarkerStart, strMarkerEnd);
 
         }else{

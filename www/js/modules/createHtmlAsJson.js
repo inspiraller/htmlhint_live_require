@@ -58,12 +58,17 @@ CreateHtmlAsJson.prototype = {
           var strRaw = arrMatch[1].replace(RegExp('\\' + strMarkerHandle + '\\d+ ','g'),'');
 
           obj = this.setProps(obj, 'tagstart', intEachIndex, pos, strRaw); 
-          obj = this.setTagName(obj, arrMatch);
-          obj = this.setChildren(obj, arrMatch, strMarkerHandle, intEachIndex, strHtmlAll, strPosEnd);
+
+          var tagName = arrMatch[3];   
+          var isSelfClosing = this.isSelfClosing(arrMatch);
+
+          obj = this.setTagName(obj, tagName);
+          obj = this.setSelfClosing(obj, isSelfClosing);
+          obj = this.setChildren(obj, arrMatch, strMarkerHandle, intEachIndex, strHtmlAll, tagName, isSelfClosing);
           obj = this.setParent(obj, objParent);
+
           arrChildren.push(obj);
           obj = this.setPresiblings(obj, arrChildren);
-
           obj = this.setEnd(obj, strPosEnd, strMarkerHandle, arrMatch[0]);
 
         }
@@ -71,14 +76,30 @@ CreateHtmlAsJson.prototype = {
     }
     return arrChildren;   
   },
+  isSelfClosing:function(arrMatch){
+    var strTagEnd1 = arrMatch[3];
+    var strTagEnd2 = arrMatch[4];
+
+
+    if(strTagEnd1!=='' && strTagEnd1.lastIndexOf('/') === (strTagEnd1.length - 1)){
+      return true;
+    }else if(strTagEnd2!=='' && strTagEnd2.lastIndexOf('/') === (strTagEnd2.length - 1)){
+      return true;
+    }
+    return false;  
+  },
+  setSelfClosing:function(obj, is){
+    obj.close = (is)?'/':'';
+    return obj;
+  },    
   setEnd:function(obj, strPosEnd, strMarkerHandle, strRaw){
     if(strRaw.indexOf(strMarkerHandle + strPosEnd + ' ') === 0){
       obj.lastTag = true;
     }
     return obj;
   },
-  setTagName:function(obj, arrMatch){
-    obj.tagName =  arrMatch[3]; 
+  setTagName:function(obj, tagName){
+    obj.tagName =  tagName; 
     return obj;
   },
   setParent:function(obj, objParent){
@@ -93,10 +114,12 @@ CreateHtmlAsJson.prototype = {
     } 
     return obj;
   },
-  setChildren:function(obj, arrMatch, strMarkerHandle, intEachIndex, strHtmlAll){
-    var tagName = arrMatch[3];   
-    var isSelfClosing = tagName.lastIndexOf('/')!==-1 || false;
+  setChildren:function(obj, arrMatch, strMarkerHandle, intEachIndex, strHtmlAll, tagName, isSelfClosing){
+
+
     var content = (!isSelfClosing)? arrMatch[5] :null;
+
+
     if(content){
       content = content.substring(0, content.lastIndexOf('</'));
       obj.children = this.buildJson(content, strMarkerHandle, obj, intEachIndex + arrMatch[1].length, strHtmlAll);            

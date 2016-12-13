@@ -73,6 +73,8 @@ var HTMLHint = (function (undefined) {
         var parser = new HTMLParser();
         var reporter = new HTMLHint.Reporter(html, ruleset);
 
+
+
         var rules = HTMLHint.rules,
             rule;
         for (var id in ruleset){
@@ -218,6 +220,11 @@ if (typeof exports === 'object' && exports){
                     link: 'https://github.com/yaniswang/HTMLHint/wiki/' + rule.id
                 }
             });
+
+// REMOVE FOR BUILD
+console.log(rule.description);
+
+
         }
     };
 
@@ -296,8 +303,10 @@ var HTMLParser = (function(undefined){
                 
 
                 var arrHtmlJson = createHtmlAsJson(strWrapped, markers.strMarkerHandle);
-                this.recurseHtmlAsJson(arrHtmlJson, function callback(objElem){                    
+                this.recurseHtmlAsJson(arrHtmlJson, function callback(objElem){ 
+
                     self.fire(objElem.type, objElem);
+
                 });
 
             }else{   
@@ -611,16 +620,6 @@ HTMLHint.addRule({
         var isErrorBadHtml = false;
 
 
-        // REMOVE FOR BUILD            
-        var reporter = {
-            error:function(str, intLine){
-                console.log(str);
-            },
-            warn:function(str, intLine){
-                console.log(str);
-            }
-        }
-
         // RESTORE FOR BUILD  
         //      
         //var getOption = function(options, prop){
@@ -792,6 +791,7 @@ HTMLHint.addRule({
     init: function(parser, reporter){
         var self = this;
         parser.addListener('tagstart', function(event){
+
 
             var tagName = event.tagName.toLowerCase(),
                 mapAttrs = parser.getMapAttrs(event.attrs),
@@ -992,15 +992,6 @@ HTMLHint.addRule({
     description: 'Invalid doctype. Use: "<!DOCTYPE html>"',
     init: function(parser, reporter){
 
-        // REMOVE FOR BUILD            
-        var reporter = {
-            error:function(str, intLine){
-                console.log(str);
-            },
-            warn:function(str, intLine){
-                console.log(str);
-            }
-        }
 
         var self = this;
         function onComment(event){
@@ -1029,16 +1020,6 @@ HTMLHint.addRule({
     description: 'Doctype must be declared first.',
     init: function(parser, reporter){
 
-        // REMOVE FOR BUILD            
-        var reporter = {
-            error:function(str, intLine){
-                console.log(str);
-            },
-            warn:function(str, intLine){
-                console.log(str);
-            }
-        }
-
 
         var self = this;
         var allEvent = function(event){
@@ -1047,8 +1028,6 @@ HTMLHint.addRule({
             }
             if((event.type !== 'comment' && event.long === false) || /^DOCTYPE\s+/i.test(event.content) === false){
 
-console.log('event = ', event);
-
                 reporter.error('Doctype must be declared first.', event.line, event.col, self, event.raw);
             }
             parser.removeListener('all', allEvent);
@@ -1056,38 +1035,7 @@ console.log('event = ', event);
         parser.addListener('all', allEvent);
     }
 });
-/*
-HTMLHint.addRule({
-    id: 'doctype-first',
-    description: 'Doctype must be declared first.',
-    init: function(parser, reporter){
 
-        // REMOVE FOR BUILD            
-        var reporter = {
-            error:function(str, intLine){
-                console.log(str);
-            },
-            warn:function(str, intLine){
-                console.log(str);
-            }
-        }
-
-                
-        var self = this;
-        var allEvent = function(event){
-          
-            if(event.type === 'start' || (event.type === 'text' && /^\s*$/.test(event.raw)) || (event.type !== 'comment' && event.long === false) || /^DOCTYPE\s+/i.test(event.content) === false){
-               
-console.log('event = ', event);
-
-                reporter.error('Doctype must be declared first.', event.line, event.col, self, event.raw);
-            }
-            parser.removeListener('all', allEvent);
-        };
-        parser.addListener('all', allEvent);
-    }
-});
-*/
 /**
  * Copyright (c) 2015, Yanis Wang <yanis.wang@gmail.com>
  * MIT Licensed
@@ -1497,22 +1445,11 @@ HTMLHint.addRule({
  * MIT Licensed
  */
  // TODO - rewrite tag-pair
+
 HTMLHint.addRule({
     id: 'tag-pair',
     description: 'Tag must be paired.',
     init: function(parser, reporter){
-
-
-
-// REMOVE FOR BUILD
-reporter = {
-    error:function(str, intLine){
-        console.log(str);
-    },
-    warn:function(str, intLine){
-        console.log(str);
-    }
-}
 
         var self = this;
         parser.addListener('tag-pair-broken', function(event){
@@ -1545,7 +1482,9 @@ HTMLHint.addRule({
         var mapEmptyTags = parser.makeMap("area,base,basefont,br,col,frame,hr,img,input,isindex,link,meta,param,embed,track,command,source,keygen,wbr");//HTML 4.01 + HTML 5
         parser.addListener('tagstart', function(event){
             var tagName = event.tagName.toLowerCase();
+
             if(mapEmptyTags[tagName] !== undefined){
+  
                 if(!event.close){
                     reporter.warn('The empty tag : [ '+tagName+' ] must be self closed.', event.line, event.col, self, event.raw);
                 }
