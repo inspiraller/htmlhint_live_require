@@ -892,7 +892,7 @@ HTMLHint.addRule({
                 col = event.col + event.tagName.length + 1;
             for(var i=0, l=attrs.length;i<l;i++){
                 attr = attrs[i];
-                if(attr.quote === '' && attr.value === ''){
+                if(attr.quote === '' || attr.value === ''){
                     reporter.warn('The attribute [ '+attr.name+' ] must have a value.', event.line, col + attr.index, self, attr.raw);
                 }
             }
@@ -909,8 +909,6 @@ HTMLHint.addRule({
     init: function(parser, reporter, options){
         var self = this;
         parser.addListener('cdata', function(event){
-
-
 
             if(event.tagName.toLowerCase() === 'style'){
 
@@ -1031,6 +1029,7 @@ HTMLHint.addRule({
 
             for(var i=0, l=attrs.length;i<l;i++){
                 attr = attrs[i];
+                
                 if(attr.name === 'href'){
                     if((hrefMode === 'absolute' && /^\w+?:/.test(attr.value) === false) ||
                         (hrefMode === 'relative' && /^https?:\/\//.test(attr.value) === true)){
@@ -1092,6 +1091,8 @@ HTMLHint.addRule({
                 'message': 'The id and class attribute values must meet the camelCase style.'
             }
         }, rule;
+
+
         if(typeof options === 'string'){
             rule = arrRules[options];
         }
