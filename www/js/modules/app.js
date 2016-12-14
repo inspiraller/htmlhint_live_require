@@ -73,7 +73,9 @@ define([
             'tag-pair': true,   
             'tag-self-close':true,
             'tagname-lowercase': true,        
-            'title-require': true
+            'title-require': true,
+            'jshint':true,
+            'csslint':true
         },
         ruleCSSLint = {
                 "display-property-grouping": true,

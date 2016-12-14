@@ -16,7 +16,8 @@ var HTMLHint = (function (undefined) {
     HTMLHint.rules = {};
 
     //默认配置
-    HTMLHint.defaultRuleset = {            'alt-require' : true,            
+    HTMLHint.defaultRuleset = {            
+            'alt-require' : true,            
             'attr-lowercase': true,
             'attr-no-duplication': true,
             'attr-unsafe-chars': true,
@@ -39,7 +40,9 @@ var HTMLHint = (function (undefined) {
             'tag-pair': true,   
             'tag-self-close':true,
             'tagname-lowercase': true,        
-            'title-require': true
+            'title-require': true,
+            'jshint':true,
+            'csslint':true
         };
 
     HTMLHint.addRule = function(rule){
@@ -77,6 +80,7 @@ var HTMLHint = (function (undefined) {
 
         var rules = HTMLHint.rules,
             rule;
+
         for (var id in ruleset){
             rule = rules[id];
             if (rule !== undefined && ruleset[id] !== false){
@@ -222,7 +226,7 @@ if (typeof exports === 'object' && exports){
             });
 
 // REMOVE FOR BUILD
-console.log('\n\n' + rule.id + ':\n' + message);
+console.log('\n\n' + rule.id + ':\n' + message + '; line = ' + line);
 
 
 
@@ -908,7 +912,7 @@ HTMLHint.addRule({
     description: 'Scan css with csslint.',
     init: function(parser, reporter, options){
         var self = this;
-        parser.addListener('cdata', function(event){
+        parser.addListener('tagstart', function(event){
 
             if(event.tagName.toLowerCase() === 'style'){
 
@@ -921,17 +925,23 @@ HTMLHint.addRule({
                     cssVerify = CSSLint.verify;
                 }
 
+
                 if(options !== undefined){
                     var styleLine = event.line - 1,
                         styleCol = event.col - 1;
-                    try{
-                        var messages = cssVerify(event.raw, options).messages;
-                        messages.forEach(function(error){
-                            var line = error.line;
-                            reporter[error.type==='warning'?'warn':'error']('['+error.rule.id+'] '+error.message, styleLine + line, (line === 1 ? styleCol : 0) + error.col, self, error.evidence);
-                        });
+
+                     var code = (event.children && event.children.length)? event.children[0].raw:null;
+
+                    if(code){
+                        try{                       
+                            var messages = cssVerify(code, options).messages;
+                            messages.forEach(function(error){
+                                var line = error.line;
+                                reporter[error.type==='warning'?'warn':'error']('['+error.rule.id+'] '+error.message, styleLine + line, (line === 1 ? styleCol : 0) + error.col, self, error.evidence);
+                            });
+                        }catch(e){}
                     }
-                    catch(e){}
+                    
                 }
 
             }
@@ -1227,8 +1237,13 @@ HTMLHint.addRule({
     description: 'Scan script with jshint.',
     init: function(parser, reporter, options){
         var self = this;
-        parser.addListener('cdata', function(event){
+
+        parser.addListener('tagstart', function(event){
+
+
+
             if(event.tagName.toLowerCase() === 'script'){
+
 
                 var mapAttrs = parser.getMapAttrs(event.attrs),
                     type = mapAttrs.type;
@@ -1250,17 +1265,21 @@ HTMLHint.addRule({
                 if(options !== undefined){
                     var styleLine = event.line - 1,
                         styleCol = event.col - 1;
-                    var code = event.raw.replace(/\t/g,' ');
-                    try{
-                        var status = jsVerify(code, options);
-                        if(status === false){
-                            jsVerify.errors.forEach(function(error){
-                                var line = error.line;
-                                reporter.warn(error.reason, styleLine + line, (line === 1 ? styleCol : 0) + error.character, self, error.evidence);
-                            });
+
+
+                    var code = (event.children && event.children.length)? event.children[0].raw.replace(/\t/g,' '):null;
+                    if(code){
+                        try{                    
+                            var status = jsVerify(code, options);
+                            if(status === false){
+                                jsVerify.errors.forEach(function(error){
+                                    var line = error.line;
+                                    reporter.warn(error.reason, styleLine + line, (line === 1 ? styleCol : 0) + error.character, self, error.evidence);
+                                });
+                            }
                         }
+                        catch(e){}
                     }
-                    catch(e){}
                 }
 
             }

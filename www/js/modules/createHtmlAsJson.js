@@ -55,16 +55,18 @@ CreateHtmlAsJson.prototype = {
           obj = this.setAttr(obj, attr);
 
           var pos = this.getPos(strHtmlAll, intEachIndex, strMarkerHandle);
+          var tagName = arrMatch[3];  
+          var isSelfClosing = this.isSelfClosing(arrMatch);           
+          var content = this.getContent(isSelfClosing, arrMatch[5]);
           var strRaw = arrMatch[1].replace(RegExp('\\' + strMarkerHandle + '\\d+ ','g'),'');
 
+
           obj = this.setProps(obj, 'tagstart', intEachIndex, pos, strRaw); 
-
-          var tagName = arrMatch[3];   
-          var isSelfClosing = this.isSelfClosing(arrMatch);
-
           obj = this.setTagName(obj, tagName);
           obj = this.setSelfClosing(obj, isSelfClosing);
-          obj = this.setChildren(obj, arrMatch, strMarkerHandle, intEachIndex, strHtmlAll, tagName, isSelfClosing);
+
+          
+          obj = this.setChildren(obj, arrMatch, strMarkerHandle, intEachIndex, strHtmlAll, tagName, content);
           obj = this.setParent(obj, objParent);
 
           arrChildren.push(obj);
@@ -114,14 +116,13 @@ CreateHtmlAsJson.prototype = {
     } 
     return obj;
   },
-  setChildren:function(obj, arrMatch, strMarkerHandle, intEachIndex, strHtmlAll, tagName, isSelfClosing){
-
-
-    var content = (!isSelfClosing)? arrMatch[5] :null;
-
-
+  getContent:function(isSelfClosing, strMatchContents){
+    var content = (!isSelfClosing)? strMatchContents :null;
+    content = (content)?content.substring(0, content.lastIndexOf('</')):null;    
+    return content;
+  },
+  setChildren:function(obj, arrMatch, strMarkerHandle, intEachIndex, strHtmlAll, tagName, content){
     if(content){
-      content = content.substring(0, content.lastIndexOf('</'));
       obj.children = this.buildJson(content, strMarkerHandle, obj, intEachIndex + arrMatch[1].length, strHtmlAll);            
     }  
     return obj;
