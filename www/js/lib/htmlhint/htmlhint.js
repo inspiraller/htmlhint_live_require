@@ -222,7 +222,8 @@ if (typeof exports === 'object' && exports){
             });
 
 // REMOVE FOR BUILD
-console.log(rule.description);
+console.log('\n\n' + rule.id + ':\n' + message);
+
 
 
         }
@@ -1455,16 +1456,26 @@ HTMLHint.addRule({
         parser.addListener('tag-pair-broken', function(event){
 
             var objHtmlWrapped = event.objHtmlWrapped;
-            var html = event.html;
+            var objStart = objHtmlWrapped.objStart;
+            if(objHtmlWrapped.objStart){           
 
-            // capture tag pairing.
-            var intStartLine = objHtmlWrapped.intStartLine;
-            var intBadLine = objHtmlWrapped.intBadLine;
-            var strMsg = objHtmlWrapped.strMsg;
+                var intStartLine = objStart.intStartLine;
+                var strStartTag = objStart.strStartTag;
 
-            if(typeof intBadLine !== 'undefined'){                   
-                //reporter.error(strMsg, intBadLine, 0, self, html);      
-                reporter.error(strMsg, intStartLine, 0, self, html); 
+                var objEnd = objHtmlWrapped.objEnd;  
+                var intEndLine = objEnd.intEndLine;
+                var strEndTag = objEnd.strEndTag;
+
+                var html = event.html;
+                var strMsg = '';
+       
+                if(strEndTag){                
+                    strMsg = 'Start tag ' + strStartTag + ' doesn\'t match end tag ' + strEndTag + '. Line ' + intStartLine + ' and ' + intEndLine + '.';
+                }else{
+                    strMsg = 'Start tag is not closed ' + strStartTag + '. Line ' + intStartLine;
+                }
+
+                reporter.error(strMsg, intStartLine, 0, self, html);     
             }  
         });
     }

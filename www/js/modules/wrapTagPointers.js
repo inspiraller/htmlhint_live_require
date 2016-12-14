@@ -117,25 +117,18 @@ WrapTagPointers.prototype = {
         var intStartBad = str.lastIndexOf(strMarkerStart);
 
         if(intStartBad!==-1){
-            var strStart = str.substr(intStartBad);
-            var strStartTag = strStart.substring(0, strStart.indexOf('>'));
-            var intStartLine = str.substring(0, intStartBad).split('\n').length;
+            var objStart = this.getBadStartTag(str, intStartBad, strMarkerStart);
+            var strStartTag = objStart.strStartTag;
+            var intStartLine = objStart.intStartLine;
 
-            // find first instance of bad marker.
-            var intEndBad = intStartBad + str.substr(intStartBad).search(strMarkerEnd);
-
-            var strBad = str.substring(0, intEndBad);
-            var strBadTag = strBad.substr(strBad.lastIndexOf('<'));
-            var intBadLine = str.substring(0, intEndBad).split('\n').length;
-
-            strStartTag = strStartTag.replace(strMarkerStart,'');
-            strBadTag = strBadTag.replace(strMarkerEnd,'');
+            var objEnd = this.getBadEndTag(str, intStartBad, strMarkerEnd);
+            var strEndTag = objEnd.strEndTag;
+            var intEndLine = objEnd.intEndLine;
 
             return {
                 isValid:false,
-                intStartLine:intStartLine,
-                intBadLine:intBadLine,
-                strMsg:'Your html is not well formed. line:' + intStartLine + ', tag:' + strStartTag + ' doesnt match line: ' + intBadLine + ', tag: ' + strBadTag,
+                objStart:objStart,
+                objEnd:objEnd,
                 strHtml:str
             };
         }
@@ -143,6 +136,38 @@ WrapTagPointers.prototype = {
             isValid:true,
             strHtml:str
         }; 
+    },
+    getBadStartTag:function(str, intStartBad, strMarkerStart){
+        var strStart = str.substr(intStartBad);
+        var strStartTag = strStart.substring(0, strStart.indexOf('>'));
+        var intStartLine = str.substring(0, intStartBad).split('\n').length;
+        strStartTag = strStartTag.replace(strMarkerStart,'');
+        return {
+            strStartTag:strStartTag,
+            intStartLine:intStartLine
+        };
+
+    },
+    getBadEndTag:function(str, intStartBad, strMarkerEnd){
+        // find first instance of bad marker.
+        var intEndBad = intStartBad + str.substr(intStartBad).search(strMarkerEnd);
+
+        if(intEndBad < intStartBad){
+            return {
+                intEndLine:str.length
+            };
+        }else{
+            var strBad = str.substring(0, intEndBad);
+            var strBadTag = strBad.substr(strBad.lastIndexOf('<'));
+            var intEndLine = str.substring(0, intEndBad).split('\n').length;        
+            var strEndTag = strBadTag.replace(strMarkerEnd,'');
+
+            return {
+                strEndTag:strEndTag,
+                intEndLine:intEndLine
+            };
+        }
+
     },
     removePointersInComments:function(str, strMarkerStart, strMarkerEnd, strMarkerEndComment){
 
