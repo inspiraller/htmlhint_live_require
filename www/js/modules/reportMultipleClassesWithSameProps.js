@@ -5,20 +5,15 @@ var styleBlocks = (typeof styleBlocks!=='undefined')?styleBlocks:function styleB
 var styleBlocksFilter = (typeof styleBlocksFilter!=='undefined')?styleBlocksFilter:function styleBlocksFilter(){};
 
 
-var reportMultipleClassesWithSameProps  = function(strWrapped, markers, strAllStyles, strRegExcludeClasses, isExcludeBemModifier){
+var reportMultipleClassesWithSameProps  = function(objElem, strAllStyles, strRegExcludeClasses, isExcludeBemModifier, objReport){
     var inst = new ReportMultipleClassesWithSameProps();
-    return inst.init(strWrapped, markers, strAllStyles, strRegExcludeClasses, isExcludeBemModifier);
+    return inst.init(objElem, strAllStyles, strRegExcludeClasses, isExcludeBemModifier, objReport);
 };
 var ReportMultipleClassesWithSameProps = function(){};
 
 ReportMultipleClassesWithSameProps.prototype = {
-    init:function(strWrapped, markers, strAllStyles, strRegExcludeClasses, isExcludeBemModifier){
-
-
-        var arrHtmlJson = this.getHtmlAsJson(strWrapped, markers);
-        var objReport = this.recurseJson(arrHtmlJson, strAllStyles, strRegExcludeClasses, isExcludeBemModifier);
-//console.log('objReport = ', objReport);
-        return objReport;
+    init:function(objElem, strAllStyles, strRegExcludeClasses, isExcludeBemModifier, objReport){
+        return this.report(objElem, strAllStyles, strRegExcludeClasses, isExcludeBemModifier, objReport);
     },  
     trim: function(str){
         return str.replace(/^\s\s*/, '').replace(/\s\s*$/, '');
@@ -40,36 +35,40 @@ ReportMultipleClassesWithSameProps.prototype = {
         }
         return mapAttrs;
     },
+    report:function(objElem, strAllStyles, strRegExcludeClasses, isExcludeBemModifier, objReport){
+        var arrAttrs = objElem.attrs;
+        var attr = (arrAttrs && arrAttrs.length)?this.getMapAttrs(arrAttrs):'';
+        var strClasses = (attr)?attr.class:'';
+
+        //console.log('##############################################################################')
+        //console.log('recurseJson - elem = ', objElem.tagName);  
+
+        if(strClasses){
+         
+            var strClassesCombined = '.' + strClasses.split(' ').join('.');
+            var objStyles = styleBlocks(strAllStyles, strClassesCombined);
+            objReport = this.reportMissingClasses(strAllStyles, strClasses, objElem, objStyles, objReport);
+
+            var isMultipleClasses = strClasses.split(' ').length > 1;
+
+            if(isMultipleClasses){
+                objReport = this.filterOutNonParents(strAllStyles, strClasses, objElem, strRegExcludeClasses, isExcludeBemModifier, objStyles, objReport);
+            }
+        }
+        return objReport;
+    },/*
     recurseJson:function(arrHtmlJson, strAllStyles, strRegExcludeClasses, isExcludeBemModifier){//, objReport
         var objReport = (arguments.length > 4)?arguments[4]:[];
         
         for(var i = 0, intLen = arrHtmlJson.length; i < intLen; ++i){
             var objElem = arrHtmlJson[i];
-            var arrAttrs = objElem.attrs;
-            var attr = (arrAttrs && arrAttrs.length)?this.getMapAttrs(arrAttrs):'';
-            var strClasses = (attr)?attr.class:'';
-
-            //console.log('##############################################################################')
-            //console.log('recurseJson - elem = ', objElem.tagName);  
-
-            if(strClasses){
-             
-                var strClassesCombined = '.' + strClasses.split(' ').join('.');
-                var objStyles = styleBlocks(strAllStyles, strClassesCombined);
-                objReport = this.reportMissingClasses(strAllStyles, strClasses, objElem, objStyles, objReport);
-
-                var isMultipleClasses = strClasses.split(' ').length > 1;
-
-                if(isMultipleClasses){
-                    objReport = this.filterOutNonParents(strAllStyles, strClasses, objElem, strRegExcludeClasses, isExcludeBemModifier, objStyles, objReport);
-                }
-            }
+            objReport = this.report(objReport, objElem);
             if(objElem.children){
                 objReport = this.recurseJson(objElem.children, strAllStyles, strRegExcludeClasses, isExcludeBemModifier, objReport);
             }
         }
         return objReport;
-    },
+    },*/
     reportMissingClasses:function(strAllStyles, strClasses, objElem, objStyles, objReport){
 
 

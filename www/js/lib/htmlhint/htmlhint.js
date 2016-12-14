@@ -709,74 +709,32 @@ HTMLHint.addRule({
             }          
         }
 
-        var reportOnMultipleClassesWithSameProps = function(self, event, reporter, objReport, isErrorMultipleSameProps){
-            if(isErrorMultipleSameProps){
-                var arrMultipleClassesSameProperties = objReport.arrMultipleClassesSameProperties || [];        
-                var i, objElem, strSelectors, strReport;
 
-                for(var i=0, intLen = arrMultipleClassesSameProperties.length; i < intLen; ++i){
-                    var objMultiple = arrMultipleClassesSameProperties[i];
-                    objElem = objMultiple.elem;
-                    var objMatchingSelectors = Object.keys(objMultiple.matching.selectors);
-                    strSelectors = objMatchingSelectors.join(',');
-                    var objMatchingProperties = Object.keys(objMultiple.matching.properties);
-                    var strProperties = objMatchingProperties.join(',');
+        parser.addListener("tagstart", function(event){
+            var html = event.html;
+            var objHtmlWrapped = event.objHtmlWrapped;                                                     
+            var objElem = event;
+            var objReport = reportMultipleClassesWithSameProps( objElem, strAllStyles, strRegExcludeClasses, isExcludeBemModifier, {});        
 
-                    strReport = "Multiple selectors exist with same properties. selectors = " + strSelectors + '. Properties = ' + strProperties ;
-                    reporter.error(strReport, objElem.line, 0, self, event.raw);                    
-                }
-            }
-        }
+            var arrMultipleClassesSameProperties = objReport.arrMultipleClassesSameProperties || [];        
+            var i, objElem, strSelectors, strReport;
 
-        var reportOnBadHTMLPairing = function(self, event, reporter, htmlWrapped, isErrorBadHtml){
+            for(var i=0, intLen = arrMultipleClassesSameProperties.length; i < intLen; ++i){
+                var objMultiple = arrMultipleClassesSameProperties[i];
+                objElem = objMultiple.elem;
+                var objMatchingSelectors = Object.keys(objMultiple.matching.selectors);
+                strSelectors = objMatchingSelectors.join(',');
+                var objMatchingProperties = Object.keys(objMultiple.matching.properties);
+                var strProperties = objMatchingProperties.join(',');
 
-            if(isErrorBadHtml){
-
-                // capture tag pairing.
-                var intStartLine = htmlWrapped.intStartLine;
-                var intBadLine = htmlWrapped.intBadLine;
-                var strMsg = htmlWrapped.strMsg;
-
-                if(typeof intBadLine !== 'undefined'){
-                    reporter.error(strMsg, intBadLine, 0, self, event.raw);      
-                    reporter.error(strMsg, intStartLine, 0, self, event.raw); 
-                }            
-            }
-        }
+                strReport = "Multiple selectors exist with same properties. selectors = " + strSelectors + '. Properties = ' + strProperties ;
+                reporter.error(strReport, objElem.line, 0, self, event.raw);                    
+            }            
+            
+        });
 
 
-        var allEvent = function(event) {
-            if(event.type == 'start'){
 
-                var html = event.html;
-                var markers = {
-                    strMarkerStart : '\u21A3',
-                    strMarkerEnd : '\u20AA',
-                    strMarkerHandle : '\u20A9',
-                    strMarkerEndComment : '\u03C8'
-                };
-
-                var htmlWrapped = wrapTagPointers(html, markers);
-                          
-                if(htmlWrapped.isValid === true){
-
-                    var strWrapped = htmlWrapped.strHtml;                    
-                    var objReport = reportMultipleClassesWithSameProps(strWrapped, markers, strAllStyles, strRegExcludeClasses, isExcludeBemModifier);
-
-                    reportOnCssClassesMissing(self, event, reporter, objReport, isWarnMissingCssClasses);
-                    reportOnMultipleClassesWithSameProps(self, event, reporter, objReport, isErrorMultipleSameProps);
-
-                }else{
-                    reportOnBadHTMLPairing(self, event, reporter,htmlWrapped, isErrorBadHtml);
-
-
-                                          
-                }
-
-            }
-            parser.removeListener("start", allEvent);
-        };
-        parser.addListener("start", allEvent);
     }
 });
 
@@ -1046,30 +1004,11 @@ HTMLHint.addRule({
     description: 'The <script> tag cannot be used in a <head> tag.',
     init: function(parser, reporter){
         var self = this;
-        var reScript = /^(text\/javascript|application\/javascript)$/i;
-        var isInHead = false;
-        function onTagStart(event){
-            var mapAttrs = parser.getMapAttrs(event.attrs);
-            var type = mapAttrs.type;
-            var tagName = event.tagName.toLowerCase();
-            if(tagName === 'head'){
-                isInHead = true;
-            }
-            if(isInHead === true &&
-                tagName === 'script' &&
-                (!type || reScript.test(type) === true)){
-                reporter.warn('The <script> tag cannot be used in a <head> tag.', event.line, event.col, self, event.raw);
-            }
-        }
-        function onTagEnd(event){
-           
-            if(event.tagName.toLowerCase() === 'head'){
-                parser.removeListener('tagstart', onTagStart);
-                parser.removeListener('tagend', onTagEnd);
-            }
-        }
-        parser.addListener('tagstart', onTagStart);
-        parser.addListener('tagend', onTagEnd);
+        parser.addListener('tagstart', function(event){
+            if(event.parent && event.parent.tagName ==='head'){
+                reporter.warn('The <script> tag cannot be used in a <head> tag.', event.line, event.col, self, event.raw);       
+            }     
+        });
     }
 });
 
@@ -1513,7 +1452,7 @@ HTMLHint.addRule({
     description: 'All html element names must be in lowercase.',
     init: function(parser, reporter){
         var self = this;
-        parser.addListener('tagstart,tagend', function(event){
+        parser.addListener('tagstart', function(event){
             var tagName = event.tagName;
             if(tagName !== tagName.toLowerCase()){
                 reporter.error('The html element name of [ '+tagName+' ] must be in lowercase.', event.line, event.col, self, event.raw);
@@ -1525,39 +1464,25 @@ HTMLHint.addRule({
  * Copyright (c) 2015, Yanis Wang <yanis.wang@gmail.com>
  * MIT Licensed
  */
+
+
 HTMLHint.addRule({
     id: 'title-require',
     description: '<title> must be present in <head> tag.',
     init: function(parser, reporter){
         var self = this;
-        var headBegin = false;
-        var hasTitle = false;
-        function onTagStart(event){
-            var tagName = event.tagName.toLowerCase();
-            if(tagName === 'head'){
-                headBegin = true;
-            }
-            else if(tagName === 'title' && headBegin){
-                hasTitle = true;
-            }
-        }
-        function onTagEnd(event){
-            var tagName = event.tagName.toLowerCase();
-            if(hasTitle && tagName === 'title'){
-                var lastEvent = event.lastEvent;
-                if(lastEvent.type !== 'text' || (lastEvent.type === 'text' && /^\s*$/.test(lastEvent.raw) === true)){
+        parser.addListener('tagstart', function(event){
+
+            if(event.tagName ==='title'){
+                if(!event.parent || event.parent.tagName!=='head'){
+                    reporter.error('<title> must be present in <head> tag.', event.line, event.col, self, event.raw);
+                }
+               
+                if(!event.children || event.children[0].raw!==''){
                     reporter.error('<title></title> must not be empty.', event.line, event.col, self, event.raw);
                 }
             }
-            else if(tagName === 'head'){
-                if(hasTitle === false){
-                    reporter.error('<title> must be present in <head> tag.', event.line, event.col, self, event.raw);
-                }
-                parser.removeListener('tagstart', onTagStart);
-                parser.removeListener('tagend', onTagEnd);
-            }
-        }
-        parser.addListener('tagstart', onTagStart);
-        parser.addListener('tagend', onTagEnd);
+        });
     }
 });
+
