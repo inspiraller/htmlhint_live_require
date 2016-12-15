@@ -7,6 +7,8 @@ var CreateHtmlAsJson = function(){};
 
 CreateHtmlAsJson.prototype = {
   init:function(html, strMarkerHandle){
+
+
     var strPosEnd = this.getEndMarkerNumber(html, strMarkerHandle);
     return this.buildJson(html, strMarkerHandle, {}, 0, html, strPosEnd);
   },
@@ -15,6 +17,7 @@ CreateHtmlAsJson.prototype = {
     var regEnd = new RegExp('\\' + strMarkerHandle + '(\\d+) \\s*$');
 
     var arrMatchEnd = html.match(regEnd);
+    
 
     if(arrMatchEnd && arrMatchEnd.length){
       strPosEnd = arrMatchEnd[1];
@@ -24,12 +27,14 @@ CreateHtmlAsJson.prototype = {
   buildJson:function(html, strMarkerHandle, objParent, index, strHtmlAll, strPosEnd){
 
     var arrChildren = [];
-    var obj;
+    var obj = {};
+    var pos;
+
 
     var regPairs = new RegExp('(\\' + strMarkerHandle + '(\\d+) <(\\w[^\\s<>]*)([^<>]*)>)([\\w\\W]*)\\' + strMarkerHandle + '\\2 ','g');
 
     if(html.search(regPairs) === -1){
-      var pos = this.getPos(strHtmlAll, index, strMarkerHandle);
+      pos = this.getPos(strHtmlAll, index, strMarkerHandle);
 
       obj = {};
       obj = this.setProps(obj, 'text', index, pos, html);
@@ -41,7 +46,6 @@ CreateHtmlAsJson.prototype = {
       // if the child has children then recurse again.
       
       var arrMatch = null;
-      var obj;
       do{
         arrMatch = regPairs.exec(html);
 
@@ -53,8 +57,7 @@ CreateHtmlAsJson.prototype = {
 
           var attr = arrMatch[4] || false;                                                   
           obj = this.setAttr(obj, attr);
-
-          var pos = this.getPos(strHtmlAll, intEachIndex, strMarkerHandle);
+          pos = this.getPos(strHtmlAll, intEachIndex, strMarkerHandle);
           var tagName = arrMatch[3];  
           var isSelfClosing = this.isSelfClosing(arrMatch);           
           var content = this.getContent(isSelfClosing, arrMatch[5]);

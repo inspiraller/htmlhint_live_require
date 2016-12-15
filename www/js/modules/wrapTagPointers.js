@@ -24,9 +24,8 @@ WrapTagPointers.prototype = {
     //If contains html
         if(str.search(/[<>]/)!==-1){
 
-
             // fix self closing
-            //str = this.fixSelfClosing(str);
+            str = this.fixSelfClosing(str);
 
             //loop all tags and wrap with markers
             //set markers
@@ -45,6 +44,9 @@ WrapTagPointers.prototype = {
             //replace with: ¬3 <(tag) >...</(tag)>¬3
             //etc...
 
+
+            var strWellFormed = str;
+
             var intC = 0,
             regI = RegExp(strMarkerStart+"(<(\\w[^\\s]*)[^\\/][^"+strMarkerStart+strMarkerEnd+"]*<\\/\\2\\s*>)"+strMarkerEnd,'g');
             var fnReplace = function(){
@@ -54,15 +56,28 @@ WrapTagPointers.prototype = {
                 return strA;
             };
             // Wrap uncollapsed tags
-            while(str.search(regI)!== -1) {str = str.replace(regI,fnReplace);}
+            while(strWellFormed.search(regI)!== -1) {strWellFormed = strWellFormed.replace(regI,fnReplace);}
 
             // Wrap collapsed/self closing tags
-            str = str.replace(/(<[^>]*\/>)/g,fnReplace);
+            strWellFormed = strWellFormed.replace(/(<[^>]*\/>)/g,fnReplace);
              
             //console.log('after - str = ', str);
 
+            var objBadHtml = this.testBadHtml(strWellFormed, strMarkerStart, strMarkerEnd);
 
-            return this.testBadHtml(str, strMarkerStart, strMarkerEnd);
+            if(objBadHtml){
+                return {
+                    objStart:objBadHtml.objStart,
+                    objEnd:objBadHtml.objEnd,
+                    isValid:false,
+                    strHtml:strWellFormed
+                };
+            }else{
+                return {
+                    isValid:true,
+                    strHtml:strWellFormed
+                };
+            }
 
         }else{
             return {
@@ -112,30 +127,25 @@ WrapTagPointers.prototype = {
 
         return html;
     },    
-    testBadHtml:function(str, strMarkerStart, strMarkerEnd){
+    testBadHtml:function(strWellFormed, strMarkerStart, strMarkerEnd){
         // Test bad html
-        var intStartBad = str.lastIndexOf(strMarkerStart);
+        var intStartBad = strWellFormed.lastIndexOf(strMarkerStart);
 
         if(intStartBad!==-1){
-            var objStart = this.getBadStartTag(str, intStartBad, strMarkerStart);
+            var objStart = this.getBadStartTag(strWellFormed, intStartBad, strMarkerStart);
             var strStartTag = objStart.strStartTag;
             var intStartLine = objStart.intStartLine;
 
-            var objEnd = this.getBadEndTag(str, intStartBad, strMarkerEnd);
+            var objEnd = this.getBadEndTag(strWellFormed, intStartBad, strMarkerEnd);
             var strEndTag = objEnd.strEndTag;
             var intEndLine = objEnd.intEndLine;
 
             return {
-                isValid:false,
                 objStart:objStart,
-                objEnd:objEnd,
-                strHtml:str
+                objEnd:objEnd
             };
         }
-        return {
-            isValid:true,
-            strHtml:str
-        }; 
+        return false;
     },
     getBadStartTag:function(str, intStartBad, strMarkerStart){
         var strStart = str.substr(intStartBad);

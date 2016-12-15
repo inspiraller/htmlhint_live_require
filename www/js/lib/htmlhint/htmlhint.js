@@ -266,7 +266,8 @@ var HTMLParser = (function(undefined){
             return obj;
         },
 
-        recurseHtmlAsJson: function(arrHtmlJson, callback){                           
+        recurseHtmlAsJson: function(arrHtmlJson, callback){           
+
             for(var i = 0, intLen = arrHtmlJson.length; i < intLen; ++i){                
                 var objElem = arrHtmlJson[i];
 
@@ -299,33 +300,23 @@ var HTMLParser = (function(undefined){
             //html = html.replace(/\&lt\;/g,'<');
 
             var objHtmlWrapped = wrapTagPointers(html, markers);
-                        
-            if(objHtmlWrapped.isValid === true){
 
-                var strWrapped = objHtmlWrapped.strHtml;  
-
-//console.log('strWrapped = "' + strWrapped + '"');
-                
-
-                var arrHtmlJson = createHtmlAsJson(strWrapped, markers.strMarkerHandle);
-                this.recurseHtmlAsJson(arrHtmlJson, function callback(objElem){ 
-
-                    self.fire(objElem.type, objElem);
-
-                });
-
-            }else{   
-
+                    
+            if(objHtmlWrapped.isValid !== true){
                 self.fire(
                     'tag-pair-broken',{
                         objHtmlWrapped:objHtmlWrapped,
                         html:html
-                    }
-                    
+                    }                    
                 );
             }
 
-
+            var strWrapped = objHtmlWrapped.strHtml;  
+                        
+            var arrHtmlJson = createHtmlAsJson(strWrapped, markers.strMarkerHandle);
+            this.recurseHtmlAsJson(arrHtmlJson, function callback(objElem){ 
+                self.fire(objElem.type, objElem);
+            });
 
 
 /*
@@ -593,20 +584,13 @@ if (typeof exports === 'object' && exports){
 }
 
 
-
-
-
 // RESTORE FOR BUILD
 /*
 var reportMultipleClassesWithSameProps = (typeof reportMultipleClassesWithSameProps!=='undefined')?reportMultipleClassesWithSameProps:function reportMultipleClassesWithSameProps(){};
 var wrapTagPointers = (typeof wrapTagPointers!=='undefined')?wrapTagPointers:function wrapTagPointers(){};
 
-
 var fs = require('fs');
 */
-
-
-
         
 HTMLHint.addRule({
     id: 'multiple-classes-same-property',
@@ -615,7 +599,8 @@ HTMLHint.addRule({
 
         var self = this;
 
-
+        // REMOVE FOR BUILD
+        
         var strAllStyles = $('#styles').val();
         var strRegExcludeClasses =  '(\\.gr\\-1|\\.gr\\-2)+';
         var isExcludeBemModifier = true;
@@ -623,33 +608,32 @@ HTMLHint.addRule({
         var isErrorMultipleSameProps = true;
         var isNeedsClassOnDivSpan = true;
         var isErrorBadHtml = false;
+        
 
-
-        // RESTORE FOR BUILD  
-        //      
-        //var getOption = function(options, prop){
             /*{
                 "tag-pair": true,
                 "multiple-classes-same-property":"strStylesPaths=C:\\projects\\careers\\Cwo.Careers.Web.UI\\ui\\app\\css\\,someOtherPath;strRegExcludeClasses=(\\.gr\\-1|\\.gr\\-2)+;isExcludeBemModifier=true;"
             }*/
 
-        //    var arrMatch = options.match(RegExp('(^|\\;)' + prop + '\\=([^\\;]+)'));
-
-        //    if(arrMatch && arrMatch.length){
-        //        return arrMatch[2];
-        //    }
-        //    return null;
-        //};
-
-        //var strStylesPaths = getOption(options, 'strStylesPaths');
-        //var strRegExcludeClasses = getOption(options, 'strRegExcludeClasses');
-        //var isExcludeBemModifier = getOption(options, 'isExcludeBemModifier');
-        //isExcludeBemModifier = (isExcludeBemModifier ==='true')?true:false;
-        
-        // example
-        //var strAllStyles = '.classX{ background:red;}'; 
-
+        // RESTORE FOR BUILD  
         /*
+        var getOption = function(options, prop){
+
+
+            var arrMatch = options.match(RegExp('(^|\\;)' + prop + '\\=([^\\;]+)'));
+
+            if(arrMatch && arrMatch.length){
+                return arrMatch[2];
+            }
+            return null;
+        };
+
+        var strStylesPaths = getOption(options, 'strStylesPaths');
+        var strRegExcludeClasses = getOption(options, 'strRegExcludeClasses');
+        var isExcludeBemModifier = getOption(options, 'isExcludeBemModifier');
+        isExcludeBemModifier = (isExcludeBemModifier ==='true')?true:false;
+        
+        
         var getDirFiles = function(dir, strExt) {
             var reg = RegExp('\\.' + strExt + '$');
             var results = [];
@@ -699,20 +683,19 @@ HTMLHint.addRule({
         var reportOnCssClassesMissing = function(self, event, reporter, objReport, isWarnMissingCssClasses){
             if(isWarnMissingCssClasses){
                 var arrSelectorsMissingFromCss = objReport.arrSelectorsMissingFromCss || [];
-                var i, objElem, strSelectors, strReport;
-                for(var i=0, intLen = arrSelectorsMissingFromCss.length; i < intLen; ++i){
+                var i, elem, strSelectors, strReport, intLen;
+                for(i=0, intLen = arrSelectorsMissingFromCss.length; i < intLen; ++i){
                     var objMissing = arrSelectorsMissingFromCss[i];
 
-                    objElem = objMissing.objElem;
+                    elem = objMissing.objElem;
                     strSelectors = objMissing.strSelectors;
                     strReport = "Selector(s) don't exist in css: " + strSelectors;
-                    var intLine = objElem.line;
+                    var intLine = elem.line;
 
                     reporter.warn(strReport, intLine, 0, self, event.raw);                    
                 }  
             }          
-        }
-
+        };
 
         parser.addListener("tagstart", function(event){
             var html = event.html;
@@ -721,24 +704,20 @@ HTMLHint.addRule({
             var objReport = reportMultipleClassesWithSameProps( objElem, strAllStyles, strRegExcludeClasses, isExcludeBemModifier, {});        
 
             var arrMultipleClassesSameProperties = objReport.arrMultipleClassesSameProperties || [];        
-            var i, objElem, strSelectors, strReport;
+            var i, strSelectors, strReport, intLen, elem;
 
-            for(var i=0, intLen = arrMultipleClassesSameProperties.length; i < intLen; ++i){
+            for(i=0, intLen = arrMultipleClassesSameProperties.length; i < intLen; ++i){
                 var objMultiple = arrMultipleClassesSameProperties[i];
-                objElem = objMultiple.elem;
+                elem = objMultiple.elem;
                 var objMatchingSelectors = Object.keys(objMultiple.matching.selectors);
                 strSelectors = objMatchingSelectors.join(',');
                 var objMatchingProperties = Object.keys(objMultiple.matching.properties);
                 var strProperties = objMatchingProperties.join(',');
 
                 strReport = "Multiple selectors exist with same properties. selectors = " + strSelectors + '. Properties = ' + strProperties ;
-                reporter.error(strReport, objElem.line, 0, self, event.raw);                    
-            }            
-            
+                reporter.error(strReport, elem.line, 0, self, event.raw);                    
+            }                        
         });
-
-
-
     }
 });
 
